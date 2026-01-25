@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "673850331570",
+    "project_id": "rewind-tv-213c1",
+    "storage_bucket": "rewind-tv-213c1.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:673850331570:android:d4a07faf0b240dff1c54ab",
+        "android_client_info": {
+          "package_name": "com.example.rewind_tv"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBprOiMDfRqZKNmNxRtpz-za_cLkdaZRPo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
