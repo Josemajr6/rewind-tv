@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+
+// Importación de pantallas (Según tu estructura de directorios)
 import 'screens/login_screen.dart';
+import 'screens/home_screen.dart';
+import 'screens/add_serie_screen.dart';
+import 'screens/serie_detail_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -13,45 +18,53 @@ class RewindTVApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const Color retroPurple = Color(0xFF9D089D);
-    const Color neonCyan = Color(0xFF00FFFF);
-
     return MaterialApp(
       title: 'RewindTV',
       debugShowCheckedModeBanner: false,
 
-      // CONFIGURACIÓN DEL TEMA
+      // Definición de las Rutas para el 10
+      initialRoute: '/',
+      routes: {
+        '/': (context) => const LoginScreen(),
+        '/home': (context) => const HomeScreen(),
+        '/add-serie': (context) => const AddSerieScreen(),
+        '/serie-detail': (context) => const SerieDetailScreen(),
+      },
+
+      // Configuración del Tema 80s/Neon
       theme: ThemeData(
         brightness: Brightness.dark,
-        // Fondo muy oscuro pero con un tinte morado casi negro
-        scaffoldBackgroundColor: const Color(0xFF120512),
+        scaffoldBackgroundColor: const Color(0xFF0D0213), // Fondo ultra oscuro
+        fontFamily: 'monospace', // Fuente estilo terminal
 
         colorScheme: const ColorScheme.dark(
-          primary: retroPurple, // Tu morado principal
-          secondary: neonCyan, // Azul cian para contrastes
-          surface: Color(0xFF1E0B1E),
+          primary: Color(0xFFFF00FF), // Magenta Neón
+          secondary: Color(0xFF00FFFF), // Cian Neón
+          surface: Color(0xFF1A0225), // Fondo de tarjetas/diálogos
         ),
 
-        fontFamily: 'Courier',
-        // Estilo global de inputs (Cajas de texto)
-        inputDecorationTheme: InputDecorationTheme(
-          filled: true,
-          fillColor: const Color(0xFF2D152D),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide.none,
+        // Personalización de estilos de botones para toda la app
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFFFF00FF),
+            foregroundColor: Colors.white,
+            textStyle: const TextStyle(
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1,
+            ),
           ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(
-              color: neonCyan,
-              width: 2,
-            ), // Brillo cian al escribir
+        ),
+
+        // Estilo de los textos
+        textTheme: const TextTheme(
+          bodyLarge: TextStyle(letterSpacing: 1.2, color: Colors.white),
+          titleLarge: TextStyle(
+            fontWeight: FontWeight.bold,
+            letterSpacing: 3,
+            color: Color(0xFF00FFFF),
           ),
         ),
       ),
-
-      home: const LoginScreen(),
     );
   }
 }

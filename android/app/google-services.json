@@ -1,26 +1,44 @@
 {
   "project_info": {
-    "project_number": "673850331570",
-    "project_id": "rewind-tv-213c1",
-    "storage_bucket": "rewind-tv-213c1.firebasestorage.app"
+    "project_number": "72790444750",
+    "project_id": "rewind-tv-nuevo",
+    "storage_bucket": "rewind-tv-nuevo.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:673850331570:android:d4a07faf0b240dff1c54ab",
+        "mobilesdk_app_id": "1:72790444750:android:edcded51774fd3fabade9f",
         "android_client_info": {
           "package_name": "com.example.rewind_tv"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "72790444750-b9gee04uas13gsjhsn9lp8jdt21pk1hv.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.rewind_tv",
+            "certificate_hash": "52005901ba63ea5e938ece42baa01defb1b5a3e4"
+          }
+        },
+        {
+          "client_id": "72790444750-38f425rpgm7297m0sp5dq2gpvpu4claq.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
-          "current_key": "AIzaSyBprOiMDfRqZKNmNxRtpz-za_cLkdaZRPo"
+          "current_key": "AIzaSyBMHA66xwup4yGm9qpRfu0MPk4qX41qrVM"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "72790444750-38f425rpgm7297m0sp5dq2gpvpu4claq.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

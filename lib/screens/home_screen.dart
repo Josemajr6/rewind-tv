@@ -8,24 +8,38 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const Color cian = Color(0xFF00FFFF);
+    const Color magenta = Color(0xFFFF00FF);
+
+    final user = AuthService().currentUser;
+    final String nombreUsuario =
+        (user?.displayName?.split(" ")[0] ?? "INVITADO").toUpperCase();
+
     return Scaffold(
-      backgroundColor: const Color(0xFF120512), // Fondo oscuro coherente
+      backgroundColor: const Color(0xFF0D0213),
       appBar: AppBar(
-        title: const Text(
-          "REWIND TV",
-          style: TextStyle(
-            letterSpacing: 3,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
+        backgroundColor: Colors.black,
+        centerTitle: true,
+        // 1. SALUDO A LA IZQUIERDA
+        leadingWidth: 120,
+        leading: Center(
+          child: Padding(
+            padding: const EdgeInsets.only(left: 20),
+            child: Text(
+              " HOLA, $nombreUsuario",
+              style: const TextStyle(
+                color: cian,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: true,
+        // 2. LOGO EN EL MEDIO
+        title: Image.asset('assets/logo.png', height: 35),
         actions: [
-          // BOTÓN CERRAR SESIÓN (Arreglado para salir de invitado o Google)
           IconButton(
-            icon: const Icon(Icons.logout, color: Color(0xFF00FFFF)),
+            icon: const Icon(Icons.power_settings_new, color: magenta),
             onPressed: () => AuthService().signOut(context),
           ),
         ],
@@ -33,70 +47,43 @@ class HomeScreen extends StatelessWidget {
       body: StreamBuilder<List<Serie>>(
         stream: FirestoreService().getSeries(),
         builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return const Center(
-              child: Text(
-                "Error al cargar datos",
-                style: TextStyle(color: Colors.white),
-              ),
-            );
-          }
-          if (!snapshot.hasData) {
-            return const Center(
-              child: CircularProgressIndicator(color: Color(0xFF00FFFF)),
-            );
-          }
+          if (!snapshot.hasData)
+            return const Center(child: CircularProgressIndicator(color: cian));
 
           final series = snapshot.data!;
-
-          if (series.isEmpty) {
-            return const Center(
-              child: Text(
-                "No hay series guardadas.\n¡Añade la primera!",
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white70),
-              ),
-            );
-          }
-
           return ListView.builder(
             itemCount: series.length,
-            padding: const EdgeInsets.only(top: 10, bottom: 80),
+            padding: const EdgeInsets.all(20),
             itemBuilder: (context, index) {
-              final serie = series[index];
-              return Card(
-                color: Colors.white.withOpacity(0.05),
-                margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                shape: RoundedRectangleBorder(
-                  side: const BorderSide(color: Color(0xFF9D089D), width: 1),
-                  borderRadius: BorderRadius.circular(12),
+              final s = series[index];
+              return Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: Colors.black,
+                  border: Border.all(color: magenta),
+                  boxShadow: const [
+                    BoxShadow(color: cian, offset: Offset(-3, 3)),
+                  ],
                 ),
                 child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 5,
+                  onTap: () => Navigator.pushNamed(
+                    context,
+                    '/serie-detail',
+                    arguments: s,
                   ),
                   title: Text(
-                    serie.titulo.toUpperCase(),
+                    s.titulo.toUpperCase(),
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
+                      letterSpacing: 1,
                     ),
                   ),
                   subtitle: Text(
-                    "${serie.genero} • ${serie.temporadas} Temporadas",
-                    style: const TextStyle(
-                      color: Color(0xFF00FFFF),
-                      fontSize: 12,
-                    ),
+                    "${s.genero} | NOTA: ${s.puntuacion}/10",
+                    style: const TextStyle(color: Colors.white54, fontSize: 11),
                   ),
-                  trailing: IconButton(
-                    icon: const Icon(
-                      Icons.delete_sweep,
-                      color: Colors.redAccent,
-                    ),
-                    onPressed: () => FirestoreService().deleteSerie(serie.id!),
-                  ),
+                  trailing: const Icon(Icons.chevron_right, color: cian),
                 ),
               );
             },
@@ -104,82 +91,9 @@ class HomeScreen extends StatelessWidget {
         },
       ),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color(0xFF9D089D),
-        child: const Icon(Icons.add, color: Colors.white, size: 30),
-        onPressed: () => _dialogoNuevaSerie(context),
-      ),
-    );
-  }
-
-  // Cuadro de diálogo minimalista para añadir series
-  void _dialogoNuevaSerie(BuildContext context) {
-    final titleController = TextEditingController();
-    final genreController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1A0A1A),
-        shape: RoundedRectangleBorder(
-          side: const BorderSide(color: Color(0xFF00FFFF)),
-        ),
-        title: const Text(
-          "AÑADIR SERIE",
-          style: TextStyle(color: Colors.white, fontSize: 16),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: titleController,
-              style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(
-                labelText: "Nombre de la serie",
-                labelStyle: TextStyle(color: Colors.white38),
-              ),
-            ),
-            TextField(
-              controller: genreController,
-              style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(
-                labelText: "Género",
-                labelStyle: TextStyle(color: Colors.white38),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text(
-              "CANCELAR",
-              style: TextStyle(color: Colors.white38),
-            ),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF9D089D),
-            ),
-            onPressed: () {
-              if (titleController.text.isNotEmpty) {
-                FirestoreService().addSerie(
-                  Serie(
-                    titulo: titleController.text,
-                    genero: genreController.text.isEmpty
-                        ? "Desconocido"
-                        : genreController.text,
-                    temporadas: 1,
-                    puntuacion: 5,
-                    estado: "viendo",
-                    uidPropietario: FirestoreService().uid,
-                  ),
-                );
-                Navigator.pop(context);
-              }
-            },
-            child: const Text("GUARDAR"),
-          ),
-        ],
+        backgroundColor: magenta,
+        child: const Icon(Icons.add, color: Colors.white),
+        onPressed: () => Navigator.pushNamed(context, '/add-serie'),
       ),
     );
   }

@@ -10,10 +10,7 @@ class AuthService {
   // Instancias de Firebase
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _db = FirebaseFirestore.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn(
-    clientId:
-        "632301852869-390vm89anrvohmh09bh4usn8fb5f83vv.apps.googleusercontent.com",
-  );
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
 
   // Método para iniciar sesión con Google
   Future<void> signInWithGoogle(BuildContext context) async {
