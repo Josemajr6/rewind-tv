@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+
+// Importaciones de tus pantallas (Revisa que los nombres de archivo sean estos)
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 
@@ -14,6 +16,7 @@ class RewindTVApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Definimos los colores neón como constantes
     const Color magenta = Color(0xFFFF00FF);
     const Color cian = Color(0xFF00FFFF);
 
@@ -25,6 +28,7 @@ class RewindTVApp extends StatelessWidget {
         '/': (context) => const LoginScreen(),
         '/home': (context) => const HomeScreen(),
       },
+      // Configuración visual de la App
       theme: ThemeData(
         brightness: Brightness.dark,
         scaffoldBackgroundColor: const Color(0xFF0D0213),
@@ -34,11 +38,7 @@ class RewindTVApp extends StatelessWidget {
           secondary: cian,
           surface: Color(0xFF1A0225),
         ),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.black,
-          centerTitle: true,
-          elevation: 0,
-        ),
+        // Estilo de los botones para toda la app
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
             backgroundColor: magenta,
