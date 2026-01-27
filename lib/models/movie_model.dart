@@ -1,33 +1,29 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class Serie {
+class Movie {
   String? id;
   String titulo;
-  String resena;
-  String genero;
+  String director;
   int puntuacion;
-  Serie({
+  Movie({
     this.id,
     required this.titulo,
-    required this.resena,
-    required this.genero,
+    required this.director,
     required this.puntuacion,
   });
 
   Map<String, dynamic> toMap() => {
     'titulo': titulo,
-    'resena': resena,
-    'genero': genero,
+    'director': director,
     'puntuacion': puntuacion,
   };
 
-  factory Serie.fromFirestore(DocumentSnapshot doc) {
+  factory Movie.fromFirestore(DocumentSnapshot doc) {
     Map data = doc.data() as Map;
-    return Serie(
+    return Movie(
       id: doc.id,
       titulo: data['titulo'] ?? '',
-      resena: data['resena'] ?? '',
-      genero: data['genero'] ?? 'Acción',
+      director: data['director'] ?? '',
       puntuacion: data['puntuacion'] ?? 5,
     );
   }

@@ -1,11 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-
-// Importación de pantallas (Según tu estructura de directorios)
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
-import 'screens/add_serie_screen.dart';
-import 'screens/serie_detail_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,50 +14,38 @@ class RewindTVApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const Color magenta = Color(0xFFFF00FF);
+    const Color cian = Color(0xFF00FFFF);
+
     return MaterialApp(
       title: 'RewindTV',
       debugShowCheckedModeBanner: false,
-
-      // Definición de las Rutas para el 10
       initialRoute: '/',
       routes: {
         '/': (context) => const LoginScreen(),
         '/home': (context) => const HomeScreen(),
-        '/add-serie': (context) => const AddSerieScreen(),
-        '/serie-detail': (context) => const SerieDetailScreen(),
       },
-
-      // Configuración del Tema 80s/Neon
       theme: ThemeData(
         brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xFF0D0213), // Fondo ultra oscuro
-        fontFamily: 'monospace', // Fuente estilo terminal
-
+        scaffoldBackgroundColor: const Color(0xFF0D0213),
+        fontFamily: 'monospace',
         colorScheme: const ColorScheme.dark(
-          primary: Color(0xFFFF00FF), // Magenta Neón
-          secondary: Color(0xFF00FFFF), // Cian Neón
-          surface: Color(0xFF1A0225), // Fondo de tarjetas/diálogos
+          primary: magenta,
+          secondary: cian,
+          surface: Color(0xFF1A0225),
         ),
-
-        // Personalización de estilos de botones para toda la app
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.black,
+          centerTitle: true,
+          elevation: 0,
+        ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFFFF00FF),
+            backgroundColor: magenta,
             foregroundColor: Colors.white,
-            textStyle: const TextStyle(
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(30),
             ),
-          ),
-        ),
-
-        // Estilo de los textos
-        textTheme: const TextTheme(
-          bodyLarge: TextStyle(letterSpacing: 1.2, color: Colors.white),
-          titleLarge: TextStyle(
-            fontWeight: FontWeight.bold,
-            letterSpacing: 3,
-            color: Color(0xFF00FFFF),
           ),
         ),
       ),
