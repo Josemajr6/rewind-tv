@@ -46,7 +46,7 @@ class _HomeScreenState extends State<HomeScreen> {
         leadingWidth: 120,
         leading: Center(
           child: Text(
-            "HOLA, $nombre",
+            "HOLA, $nombre".toUpperCase(),
             style: TextStyle(
               color: _obtenerColorActual(),
               fontSize: 10,
