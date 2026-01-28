@@ -26,12 +26,11 @@ class LoginScreen extends StatelessWidget {
                     BoxShadow(
                       color: magenta.withOpacity(0.3), // Brillo sutil
                       blurRadius: 50, // Difuminado amplio
-                      spreadRadius: 2, // Expansión corta
                     ),
                   ],
                 ),
                 child: Image.asset(
-                  'assets/logo.png',
+                  'assets/logo-completo.png',
                   height: 200,
                   // Si el logo no existe, ponemos un icono de repuesto para que no pete
                   errorBuilder: (context, error, stackTrace) =>
