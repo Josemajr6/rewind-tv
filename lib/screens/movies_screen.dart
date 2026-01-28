@@ -7,65 +7,79 @@ class MoviesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Definimos el color cian neón para las Películas
-    const Color colorPelis = Color(0xFF00FFFF);
+    const Color colorPelis = Color(0xFF00FFFF); // Cian neón
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0D0213), // Fondo oscuro retro
+      backgroundColor: const Color(0xFF0D0213),
       body: StreamBuilder<List<Movie>>(
-        // Escuchamos la colección de películas en tiempo real
+        // Obtener películas en tiempo real desde Firestore
         stream: FirestoreService().getMovies(),
         builder: (context, snapshot) {
-          // Mientras carga, mostramos el indicador de progreso
+          // Mostrar indicador de carga mientras se obtienen los datos
           if (!snapshot.hasData) {
             return const Center(
               child: CircularProgressIndicator(color: colorPelis),
             );
           }
 
-          final movies = snapshot.data!;
+          final peliculas = snapshot.data!;
 
+          // Si no hay películas, mostrar mensaje
+          if (peliculas.isEmpty) {
+            return const Center(
+              child: Text(
+                'NO HAY PELÍCULAS.\nPULSA + PARA AÑADIR',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.white54, fontSize: 16),
+              ),
+            );
+          }
+
+          // Lista de películas
           return ListView.builder(
-            itemCount: movies.length,
+            itemCount: peliculas.length,
             padding: const EdgeInsets.all(15),
-            itemBuilder: (context, i) {
-              final peli = movies[i];
+            itemBuilder: (context, index) {
+              final pelicula = peliculas[index];
 
-              // Diseño de la tarjeta de película
               return Card(
-                color: Colors.white.withOpacity(0.05), // Fondo sutil
+                color: Colors.white.withOpacity(0.05),
                 margin: const EdgeInsets.only(bottom: 12),
                 shape: RoundedRectangleBorder(
-                  side: const BorderSide(
-                    color: colorPelis,
-                    width: 0.5,
-                  ), // Borde neón cian
-                  borderRadius: BorderRadius.circular(10),
+                  side: const BorderSide(color: colorPelis, width: 0.5),
+                  borderRadius: BorderRadius.circular(10.0),
                 ),
                 child: ListTile(
+                  // Título de la película
                   title: Text(
-                    peli.titulo.toUpperCase(), // Título siempre en mayúsculas
+                    pelicula.titulo.toUpperCase(),
                     style: const TextStyle(
                       color: colorPelis,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
+
+                  // Director y puntuación
                   subtitle: Text(
-                    "${peli.director} • ${peli.puntuacion}/10",
+                    "${pelicula.director} • ${pelicula.puntuacion}/10",
                     style: const TextStyle(color: Colors.white70),
                   ),
-                  // Botones de acción unificados (Editar y Borrar)
+
+                  // Botones de editar y eliminar
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      // Botón editar
                       IconButton(
-                        icon: const Icon(Icons.edit, color: Colors.white70),
-                        onPressed: () => _dialogoEditar(context, peli),
+                        icon: const Icon(Icons.edit, color: colorPelis),
+                        onPressed: () =>
+                            _mostrarDialogoEditar(context, pelicula),
                       ),
+
+                      // Botón eliminar
                       IconButton(
                         icon: const Icon(Icons.delete, color: Colors.redAccent),
-                        onPressed: () =>
-                            FirestoreService().deleteMovie(peli.id!),
+                        onPressed: () => _confirmarEliminar(context, pelicula),
                       ),
                     ],
                   ),
@@ -78,19 +92,17 @@ class MoviesScreen extends StatelessWidget {
     );
   }
 
-  // --- FUNCIÓN PARA EL DIÁLOGO DE EDICIÓN ---
-  void _dialogoEditar(BuildContext context, Movie peli) {
-    final t1 = TextEditingController(text: peli.titulo);
-    final t2 = TextEditingController(text: peli.director);
-    int nota = peli.puntuacion;
+  // ========== DIÁLOGO PARA EDITAR PELÍCULA ==========
+  void _mostrarDialogoEditar(BuildContext context, Movie pelicula) {
+    final controladorTitulo = TextEditingController(text: pelicula.titulo);
+    final controladorDirector = TextEditingController(text: pelicula.director);
+    int notaSeleccionada = pelicula.puntuacion;
 
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
-          backgroundColor: const Color(
-            0xFF1A0225,
-          ), // Color de fondo del diálogo
+          backgroundColor: const Color(0xFF1A0225),
           title: const Text(
             "EDITAR PELÍCULA",
             style: TextStyle(color: Colors.white),
@@ -98,30 +110,46 @@ class MoviesScreen extends StatelessWidget {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // Campo de título
               TextField(
-                controller: t1,
+                controller: controladorTitulo,
                 style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(labelText: "Título"),
-              ),
-              TextField(
-                controller: t2,
-                style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(labelText: "Director"),
+                decoration: const InputDecoration(
+                  labelText: "Título",
+                  labelStyle: TextStyle(color: Colors.white70),
+                ),
               ),
               const SizedBox(height: 10),
-              // Selector de Nota
-              DropdownButton<int>(
-                value: nota,
-                isExpanded: true,
+
+              // Campo de director
+              TextField(
+                controller: controladorDirector,
+                style: const TextStyle(color: Colors.white),
+                decoration: const InputDecoration(
+                  labelText: "Director",
+                  labelStyle: TextStyle(color: Colors.white70),
+                ),
+              ),
+              const SizedBox(height: 15),
+
+              // Selector de puntuación
+              DropdownButtonFormField<int>(
+                value: notaSeleccionada,
                 dropdownColor: const Color(0xFF1A0225),
                 style: const TextStyle(color: Color(0xFF00FFFF)),
+                decoration: const InputDecoration(
+                  labelText: "Puntuación",
+                  labelStyle: TextStyle(color: Colors.white70),
+                ),
                 items: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
                     .map(
-                      (n) =>
-                          DropdownMenuItem(value: n, child: Text("Nota: $n")),
+                      (nota) => DropdownMenuItem(
+                        value: nota,
+                        child: Text("Nota: $nota"),
+                      ),
                     )
                     .toList(),
-                onChanged: (v) => setState(() => nota = v!),
+                onChanged: (valor) => setState(() => notaSeleccionada = valor!),
               ),
             ],
           ),
@@ -135,11 +163,11 @@ class MoviesScreen extends StatelessWidget {
             ),
             ElevatedButton(
               onPressed: () {
-                // Actualizamos los datos en Firebase
-                FirestoreService().updateMovie(peli.id!, {
-                  'titulo': t1.text,
-                  'director': t2.text,
-                  'puntuacion': nota,
+                // Actualizar película en Firestore
+                FirestoreService().updateMovie(pelicula.id!, {
+                  'titulo': controladorTitulo.text,
+                  'director': controladorDirector.text,
+                  'puntuacion': notaSeleccionada,
                 });
                 Navigator.pop(context);
               },
@@ -147,6 +175,42 @@ class MoviesScreen extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  // ========== CONFIRMAR ANTES DE ELIMINAR ==========
+  void _confirmarEliminar(BuildContext context, Movie pelicula) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1A0225),
+        title: const Text(
+          "CONFIRMAR ELIMINACIÓN",
+          style: TextStyle(color: Colors.white),
+        ),
+        content: Text(
+          "¿Eliminar '${pelicula.titulo}'?",
+          style: const TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text(
+              "CANCELAR",
+              style: TextStyle(color: Colors.white54),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+            onPressed: () {
+              // Eliminar película de Firestore
+              FirestoreService().deleteMovie(pelicula.id!);
+              Navigator.pop(context);
+            },
+            child: const Text("ELIMINAR"),
+          ),
+        ],
       ),
     );
   }

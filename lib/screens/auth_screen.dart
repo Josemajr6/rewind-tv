@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart'; // Importamos la librería
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../services/auth_service.dart';
 
-class LoginScreen extends StatelessWidget {
-  const LoginScreen({super.key});
+class AuthScreen extends StatelessWidget {
+  const AuthScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -18,40 +18,35 @@ class LoginScreen extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // 1. LOGO CON BRILLO NEÓN (Corregido)
+              // Logo con efecto neón
               Container(
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   boxShadow: [
-                    BoxShadow(
-                      color: magenta.withOpacity(0.3), // Brillo sutil
-                      blurRadius: 50, // Difuminado amplio
-                    ),
+                    BoxShadow(color: magenta.withOpacity(0.3), blurRadius: 50),
                   ],
                 ),
                 child: Image.asset(
                   'assets/logo-completo.png',
                   height: 200,
-                  // Si el logo no existe, ponemos un icono de repuesto para que no pete
                   errorBuilder: (context, error, stackTrace) =>
                       const Icon(Icons.videocam, size: 100, color: magenta),
                 ),
               ),
               const SizedBox(height: 60),
 
-              // 2. BOTÓN GOOGLE (Con FontAwesome)
+              // Botón de Google Sign In
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,
                   foregroundColor: Colors.black,
                   minimumSize: const Size(double.infinity, 55),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
+                    borderRadius: BorderRadius.circular(30.0),
                   ),
                   elevation: 5,
                 ),
                 onPressed: () => AuthService().signInWithGoogle(context),
-                // USAMOS FONT AWESOME: Cero errores de carga
                 icon: const FaIcon(
                   FontAwesomeIcons.google,
                   color: Color(0xFFDB4437),
@@ -68,14 +63,14 @@ class LoginScreen extends StatelessWidget {
 
               const SizedBox(height: 20),
 
-              // 3. BOTÓN INVITADO (Con FontAwesome)
+              // Botón de modo invitado
               OutlinedButton.icon(
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: cian, width: 2),
                   foregroundColor: cian,
                   minimumSize: const Size(double.infinity, 55),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
+                    borderRadius: BorderRadius.circular(30.0),
                   ),
                 ),
                 onPressed: () =>

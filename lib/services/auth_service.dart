@@ -4,7 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import '../screens/home_screen.dart';
-import '../screens/login_screen.dart';
+import '../screens/auth_screen.dart';
 
 class AuthService {
   // Instancias de Firebase
@@ -77,7 +77,7 @@ class AuthService {
     if (context.mounted) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        MaterialPageRoute(builder: (_) => const AuthScreen()),
       );
     }
   }

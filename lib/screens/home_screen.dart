@@ -6,7 +6,7 @@ import '../models/serie_model.dart';
 import '../models/movie_model.dart';
 import '../models/game_model.dart';
 
-// Asegúrate de tener estos archivos creados en tu carpeta screens
+// Importar las 3 pantallas de colecciones
 import 'series_screen.dart';
 import 'movies_screen.dart';
 import 'games_screen.dart';
@@ -19,19 +19,19 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // Índice de la pestaña actual
+  // Control de la pestaña actual
   int _currentIndex = 0;
 
-  // Colores neón para cada categoría
+  // Colores neón para cada sección
   static const Color colorSerie = Color(0xFFFF00FF); // Magenta
   static const Color colorPeli = Color(0xFF00FFFF); // Cian
   static const Color colorJuego = Color(0xFF00FF66); // Verde
 
-  // Lista de las 3 páginas (Imprescindible tener 3 para evitar el RangeError)
-  final List<Widget> _paginas = [
-    const SeriesScreen(),
-    const MoviesScreen(),
-    const GamesScreen(),
+  // Las 3 pantallas de colecciones
+  final List<Widget> _paginas = const [
+    SeriesScreen(),
+    MoviesScreen(),
+    GamesScreen(),
   ];
 
   @override
@@ -41,12 +41,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFF0D0213),
+
+      // AppBar con logo y botón de salir
       appBar: AppBar(
         backgroundColor: Colors.black,
         leadingWidth: 120,
         leading: Center(
           child: Text(
-            "HOLA, $nombre".toUpperCase(),
+            "HOLA, $nombre",
             style: TextStyle(
               color: _obtenerColorActual(),
               fontSize: 10,
@@ -68,10 +70,10 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
 
-      // Muestra la pantalla según la pestaña
+      // Mostrar la pantalla según la pestaña seleccionada
       body: _paginas[_currentIndex],
 
-      // Menú inferior
+      // Navegación inferior con 3 pestañas
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: Colors.black,
         currentIndex: _currentIndex,
@@ -94,7 +96,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
 
-      // Botón flotante para crear (He cambiado el nombre de la función a 'Anadir')
+      // Botón flotante para añadir elementos
       floatingActionButton: FloatingActionButton(
         backgroundColor: _obtenerColorActual(),
         child: const Icon(Icons.add, color: Colors.black),
@@ -103,29 +105,30 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // --- LÓGICA INTERNA (SIN CARACTERES ESPECIALES) ---
-
+  // Obtener el color según la pestaña actual
   Color _obtenerColorActual() {
     if (_currentIndex == 0) return colorSerie;
     if (_currentIndex == 1) return colorPeli;
     return colorJuego;
   }
 
+  // Abrir el diálogo correspondiente según la pestaña
   void _abrirDialogoAnadir(BuildContext context) {
-    if (_currentIndex == 0)
+    if (_currentIndex == 0) {
       _dialogoAnadirSerie(context);
-    else if (_currentIndex == 1)
+    } else if (_currentIndex == 1) {
       _dialogoAnadirPeli(context);
-    else
+    } else {
       _dialogoAnadirJuego(context);
+    }
   }
 
-  // 1. DIÁLOGO SERIE
+  // ========== DIÁLOGO PARA AÑADIR SERIE ==========
   void _dialogoAnadirSerie(BuildContext context) {
-    final t1 = TextEditingController();
-    final t2 = TextEditingController();
-    String gen = SeriesScreen.generos[0];
-    int nota = 5;
+    final controladorTitulo = TextEditingController();
+    final controladorResena = TextEditingController();
+    String generoSeleccionado = SeriesScreen.generos[0];
+    int notaSeleccionada = 5;
 
     showDialog(
       context: context,
@@ -140,36 +143,70 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                // Campo de título
                 TextField(
-                  controller: t1,
-                  decoration: const InputDecoration(labelText: "Título"),
+                  controller: controladorTitulo,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(
+                    labelText: "Título",
+                    labelStyle: TextStyle(color: Colors.white70),
+                  ),
                 ),
+                const SizedBox(height: 10),
+
+                // Campo de reseña
                 TextField(
-                  controller: t2,
-                  decoration: const InputDecoration(labelText: "Reseña"),
+                  controller: controladorResena,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(
+                    labelText: "Reseña",
+                    labelStyle: TextStyle(color: Colors.white70),
+                  ),
                   maxLines: 2,
                 ),
                 const SizedBox(height: 10),
+
+                // Selector de género
                 DropdownButtonFormField<String>(
-                  value: gen,
+                  value: generoSeleccionado,
                   dropdownColor: const Color(0xFF1A0225),
+                  style: const TextStyle(color: colorSerie),
+                  decoration: const InputDecoration(
+                    labelText: "Género",
+                    labelStyle: TextStyle(color: Colors.white70),
+                  ),
                   items: SeriesScreen.generos
-                      .map((g) => DropdownMenuItem(value: g, child: Text(g)))
-                      .toList(),
-                  onChanged: (v) => setState(() => gen = v!),
-                  decoration: const InputDecoration(labelText: "Género"),
-                ),
-                DropdownButtonFormField<int>(
-                  value: nota,
-                  dropdownColor: const Color(0xFF1A0225),
-                  items: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
                       .map(
-                        (n) =>
-                            DropdownMenuItem(value: n, child: Text("Nota: $n")),
+                        (genero) => DropdownMenuItem(
+                          value: genero,
+                          child: Text(genero),
+                        ),
                       )
                       .toList(),
-                  onChanged: (v) => setState(() => nota = v!),
-                  decoration: const InputDecoration(labelText: "Puntuación"),
+                  onChanged: (valor) =>
+                      setState(() => generoSeleccionado = valor!),
+                ),
+                const SizedBox(height: 10),
+
+                // Selector de puntuación
+                DropdownButtonFormField<int>(
+                  value: notaSeleccionada,
+                  dropdownColor: const Color(0xFF1A0225),
+                  style: const TextStyle(color: colorSerie),
+                  decoration: const InputDecoration(
+                    labelText: "Puntuación",
+                    labelStyle: TextStyle(color: Colors.white70),
+                  ),
+                  items: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+                      .map(
+                        (nota) => DropdownMenuItem(
+                          value: nota,
+                          child: Text("Nota: $nota"),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (valor) =>
+                      setState(() => notaSeleccionada = valor!),
                 ),
               ],
             ),
@@ -177,17 +214,21 @@ class _HomeScreenState extends State<HomeScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text("CANCELAR"),
+              child: const Text(
+                "CANCELAR",
+                style: TextStyle(color: Colors.white54),
+              ),
             ),
             ElevatedButton(
               onPressed: () {
-                if (t1.text.isNotEmpty) {
+                if (controladorTitulo.text.isNotEmpty) {
+                  // Añadir serie a Firestore
                   FirestoreService().addSerie(
                     Serie(
-                      titulo: t1.text,
-                      resena: t2.text,
-                      genero: gen,
-                      puntuacion: nota,
+                      titulo: controladorTitulo.text,
+                      resena: controladorResena.text,
+                      genero: generoSeleccionado,
+                      puntuacion: notaSeleccionada,
                     ),
                   );
                   Navigator.pop(context);
@@ -201,11 +242,11 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // 2. DIÁLOGO PELÍCULA
+  // ========== DIÁLOGO PARA AÑADIR PELÍCULA ==========
   void _dialogoAnadirPeli(BuildContext context) {
-    final t1 = TextEditingController();
-    final t2 = TextEditingController();
-    int nota = 5;
+    final controladorTitulo = TextEditingController();
+    final controladorDirector = TextEditingController();
+    int notaSeleccionada = 5;
 
     showDialog(
       context: context,
@@ -219,39 +260,67 @@ class _HomeScreenState extends State<HomeScreen> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // Campo de título
               TextField(
-                controller: t1,
-                decoration: const InputDecoration(labelText: "Título"),
-              ),
-              TextField(
-                controller: t2,
-                decoration: const InputDecoration(labelText: "Director"),
+                controller: controladorTitulo,
+                style: const TextStyle(color: Colors.white),
+                decoration: const InputDecoration(
+                  labelText: "Título",
+                  labelStyle: TextStyle(color: Colors.white70),
+                ),
               ),
               const SizedBox(height: 10),
+
+              // Campo de director
+              TextField(
+                controller: controladorDirector,
+                style: const TextStyle(color: Colors.white),
+                decoration: const InputDecoration(
+                  labelText: "Director",
+                  labelStyle: TextStyle(color: Colors.white70),
+                ),
+              ),
+              const SizedBox(height: 10),
+
+              // Selector de puntuación
               DropdownButtonFormField<int>(
-                value: nota,
+                value: notaSeleccionada,
                 dropdownColor: const Color(0xFF1A0225),
+                style: const TextStyle(color: colorPeli),
+                decoration: const InputDecoration(
+                  labelText: "Puntuación",
+                  labelStyle: TextStyle(color: Colors.white70),
+                ),
                 items: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
                     .map(
-                      (n) =>
-                          DropdownMenuItem(value: n, child: Text("Nota: $n")),
+                      (nota) => DropdownMenuItem(
+                        value: nota,
+                        child: Text("Nota: $nota"),
+                      ),
                     )
                     .toList(),
-                onChanged: (v) => setState(() => nota = v!),
-                decoration: const InputDecoration(labelText: "Nota"),
+                onChanged: (valor) => setState(() => notaSeleccionada = valor!),
               ),
             ],
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text("CANCELAR"),
+              child: const Text(
+                "CANCELAR",
+                style: TextStyle(color: Colors.white54),
+              ),
             ),
             ElevatedButton(
               onPressed: () {
-                if (t1.text.isNotEmpty) {
+                if (controladorTitulo.text.isNotEmpty) {
+                  // Añadir película a Firestore
                   FirestoreService().addMovie(
-                    Movie(titulo: t1.text, director: t2.text, puntuacion: nota),
+                    Movie(
+                      titulo: controladorTitulo.text,
+                      director: controladorDirector.text,
+                      puntuacion: notaSeleccionada,
+                    ),
                   );
                   Navigator.pop(context);
                 }
@@ -264,11 +333,11 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // 3. DIÁLOGO JUEGO
+  // ========== DIÁLOGO PARA AÑADIR JUEGO ==========
   void _dialogoAnadirJuego(BuildContext context) {
-    final t1 = TextEditingController();
-    String plat = 'PC';
-    int nota = 5;
+    final controladorTitulo = TextEditingController();
+    String plataformaSeleccionada = 'PC';
+    int notaSeleccionada = 5;
 
     showDialog(
       context: context,
@@ -282,49 +351,78 @@ class _HomeScreenState extends State<HomeScreen> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // Campo de título
               TextField(
-                controller: t1,
-                decoration: const InputDecoration(labelText: "Título"),
+                controller: controladorTitulo,
+                style: const TextStyle(color: Colors.white),
+                decoration: const InputDecoration(
+                  labelText: "Título",
+                  labelStyle: TextStyle(color: Colors.white70),
+                ),
               ),
               const SizedBox(height: 10),
+
+              // Selector de plataforma
               DropdownButtonFormField<String>(
-                value: plat,
+                value: plataformaSeleccionada,
                 dropdownColor: const Color(0xFF1A0225),
+                style: const TextStyle(color: colorJuego),
+                decoration: const InputDecoration(
+                  labelText: "Plataforma",
+                  labelStyle: TextStyle(color: Colors.white70),
+                ),
                 items: ['PC', 'PS5', 'Switch', 'Xbox']
-                    .map((p) => DropdownMenuItem(value: p, child: Text(p)))
-                    .toList(),
-                onChanged: (v) => setState(() => plat = v!),
-                decoration: const InputDecoration(labelText: "Plataforma"),
-              ),
-              const SizedBox(height: 10),
-              DropdownButtonFormField<int>(
-                value: nota,
-                dropdownColor: const Color(0xFF1A0225),
-                items: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
                     .map(
-                      (n) =>
-                          DropdownMenuItem(value: n, child: Text("Nota: $n")),
+                      (plataforma) => DropdownMenuItem(
+                        value: plataforma,
+                        child: Text(plataforma),
+                      ),
                     )
                     .toList(),
-                onChanged: (v) => setState(() => nota = v!),
-                decoration: const InputDecoration(labelText: "Nota"),
+                onChanged: (valor) =>
+                    setState(() => plataformaSeleccionada = valor!),
+              ),
+              const SizedBox(height: 10),
+
+              // Selector de puntuación
+              DropdownButtonFormField<int>(
+                value: notaSeleccionada,
+                dropdownColor: const Color(0xFF1A0225),
+                style: const TextStyle(color: colorJuego),
+                decoration: const InputDecoration(
+                  labelText: "Puntuación",
+                  labelStyle: TextStyle(color: Colors.white70),
+                ),
+                items: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+                    .map(
+                      (nota) => DropdownMenuItem(
+                        value: nota,
+                        child: Text("Nota: $nota"),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (valor) => setState(() => notaSeleccionada = valor!),
               ),
             ],
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text("CANCELAR"),
+              child: const Text(
+                "CANCELAR",
+                style: TextStyle(color: Colors.white54),
+              ),
             ),
             ElevatedButton(
               onPressed: () {
-                if (t1.text.isNotEmpty) {
+                if (controladorTitulo.text.isNotEmpty) {
+                  // Añadir juego a Firestore
                   FirestoreService().addGame(
                     Game(
-                      titulo: t1.text,
-                      plataforma: plat,
+                      titulo: controladorTitulo.text,
+                      plataforma: plataformaSeleccionada,
                       estado: "Jugando",
-                      puntuacion: nota,
+                      puntuacion: notaSeleccionada,
                     ),
                   );
                   Navigator.pop(context);

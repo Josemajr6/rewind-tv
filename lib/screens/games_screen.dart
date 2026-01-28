@@ -7,66 +7,81 @@ class GamesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Definimos el color verde neón para los Juegos
-    const Color colorJuegos = Color(0xFF00FF66);
+    const Color colorJuegos = Color(0xFF00FF66); // Verde neón
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0D0213), // Fondo oscuro retro
+      backgroundColor: const Color(0xFF0D0213),
       body: StreamBuilder<List<Game>>(
-        // Conexión en tiempo real con la colección de Juegos en Firebase
+        // Obtener juegos en tiempo real desde Firestore
         stream: FirestoreService().getGames(),
         builder: (context, snapshot) {
-          // Mientras cargan los datos, mostramos un indicador circular
+          // Mostrar indicador de carga mientras se obtienen los datos
           if (!snapshot.hasData) {
             return const Center(
               child: CircularProgressIndicator(color: colorJuegos),
             );
           }
 
-          final games = snapshot.data!;
+          final juegos = snapshot.data!;
 
+          // Si no hay juegos, mostrar mensaje
+          if (juegos.isEmpty) {
+            return const Center(
+              child: Text(
+                'NO HAY JUEGOS.\nPULSA + PARA AÑADIR',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.white54, fontSize: 16),
+              ),
+            );
+          }
+
+          // Lista de juegos
           return ListView.builder(
-            itemCount: games.length,
+            itemCount: juegos.length,
             padding: const EdgeInsets.all(15),
-            itemBuilder: (context, i) {
-              final game = games[i];
+            itemBuilder: (context, index) {
+              final juego = juegos[index];
 
-              // Diseño de cada tarjeta de juego
               return Card(
-                color: Colors.white.withOpacity(0.05), // Fondo sutil
+                color: Colors.white.withOpacity(0.05),
                 margin: const EdgeInsets.only(bottom: 12),
                 shape: RoundedRectangleBorder(
-                  side: const BorderSide(
-                    color: colorJuegos,
-                    width: 0.5,
-                  ), // Borde neón
-                  borderRadius: BorderRadius.circular(10),
+                  side: const BorderSide(color: colorJuegos, width: 0.5),
+                  borderRadius: BorderRadius.circular(10.0),
                 ),
                 child: ListTile(
+                  // Icono de juego
                   leading: const Icon(Icons.gamepad, color: colorJuegos),
+
+                  // Título del juego
                   title: Text(
-                    game.titulo.toUpperCase(),
+                    juego.titulo.toUpperCase(),
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
+
+                  // Plataforma y puntuación
                   subtitle: Text(
-                    "${game.plataforma} • ${game.puntuacion}/10",
+                    "${juego.plataforma} • ${juego.puntuacion}/10",
                     style: const TextStyle(color: Colors.white70),
                   ),
-                  // Botones de acción unificados (Editar y Borrar)
+
+                  // Botones de editar y eliminar
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      // Botón editar
                       IconButton(
-                        icon: const Icon(Icons.edit, color: Colors.white70),
-                        onPressed: () => _dialogoEditar(context, game),
+                        icon: const Icon(Icons.edit, color: colorJuegos),
+                        onPressed: () => _mostrarDialogoEditar(context, juego),
                       ),
+
+                      // Botón eliminar
                       IconButton(
                         icon: const Icon(Icons.delete, color: Colors.redAccent),
-                        onPressed: () =>
-                            FirestoreService().deleteGame(game.id!),
+                        onPressed: () => _confirmarEliminar(context, juego),
                       ),
                     ],
                   ),
@@ -79,11 +94,11 @@ class GamesScreen extends StatelessWidget {
     );
   }
 
-  // --- FUNCIÓN PARA MOSTRAR EL DIÁLOGO DE EDICIÓN ---
-  void _dialogoEditar(BuildContext context, Game game) {
-    final t1 = TextEditingController(text: game.titulo);
-    String plat = game.plataforma;
-    int nota = game.puntuacion;
+  // ========== DIÁLOGO PARA EDITAR JUEGO ==========
+  void _mostrarDialogoEditar(BuildContext context, Game juego) {
+    final controladorTitulo = TextEditingController(text: juego.titulo);
+    String plataformaSeleccionada = juego.plataforma;
+    int notaSeleccionada = juego.puntuacion;
 
     showDialog(
       context: context,
@@ -97,37 +112,57 @@ class GamesScreen extends StatelessWidget {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Campo para el título
+              // Campo de título
               TextField(
-                controller: t1,
+                controller: controladorTitulo,
                 style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(labelText: "Título"),
+                decoration: const InputDecoration(
+                  labelText: "Título",
+                  labelStyle: TextStyle(color: Colors.white70),
+                ),
               ),
-              const SizedBox(height: 10),
-              // Selector de Plataforma
-              DropdownButton<String>(
-                value: plat,
-                isExpanded: true,
+              const SizedBox(height: 15),
+
+              // Selector de plataforma
+              DropdownButtonFormField<String>(
+                value: plataformaSeleccionada,
                 dropdownColor: const Color(0xFF1A0225),
                 style: const TextStyle(color: Color(0xFF00FF66)),
+                decoration: const InputDecoration(
+                  labelText: "Plataforma",
+                  labelStyle: TextStyle(color: Colors.white70),
+                ),
                 items: ['PC', 'PS5', 'Switch', 'Xbox']
-                    .map((p) => DropdownMenuItem(value: p, child: Text(p)))
-                    .toList(),
-                onChanged: (v) => setState(() => plat = v!),
-              ),
-              // Selector de Nota
-              DropdownButton<int>(
-                value: nota,
-                isExpanded: true,
-                dropdownColor: const Color(0xFF1A0225),
-                style: const TextStyle(color: Color(0xFF00FF66)),
-                items: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
                     .map(
-                      (n) =>
-                          DropdownMenuItem(value: n, child: Text("Nota: $n")),
+                      (plataforma) => DropdownMenuItem(
+                        value: plataforma,
+                        child: Text(plataforma),
+                      ),
                     )
                     .toList(),
-                onChanged: (v) => setState(() => nota = v!),
+                onChanged: (valor) =>
+                    setState(() => plataformaSeleccionada = valor!),
+              ),
+              const SizedBox(height: 15),
+
+              // Selector de puntuación
+              DropdownButtonFormField<int>(
+                value: notaSeleccionada,
+                dropdownColor: const Color(0xFF1A0225),
+                style: const TextStyle(color: Color(0xFF00FF66)),
+                decoration: const InputDecoration(
+                  labelText: "Puntuación",
+                  labelStyle: TextStyle(color: Colors.white70),
+                ),
+                items: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+                    .map(
+                      (nota) => DropdownMenuItem(
+                        value: nota,
+                        child: Text("Nota: $nota"),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (valor) => setState(() => notaSeleccionada = valor!),
               ),
             ],
           ),
@@ -141,11 +176,11 @@ class GamesScreen extends StatelessWidget {
             ),
             ElevatedButton(
               onPressed: () {
-                // Llamamos al servicio para actualizar en Firebase
-                FirestoreService().updateGame(game.id!, {
-                  'titulo': t1.text,
-                  'plataforma': plat,
-                  'puntuacion': nota,
+                // Actualizar juego en Firestore
+                FirestoreService().updateGame(juego.id!, {
+                  'titulo': controladorTitulo.text,
+                  'plataforma': plataformaSeleccionada,
+                  'puntuacion': notaSeleccionada,
                 });
                 Navigator.pop(context);
               },
@@ -153,6 +188,42 @@ class GamesScreen extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  // ========== CONFIRMAR ANTES DE ELIMINAR ==========
+  void _confirmarEliminar(BuildContext context, Game juego) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1A0225),
+        title: const Text(
+          "CONFIRMAR ELIMINACIÓN",
+          style: TextStyle(color: Colors.white),
+        ),
+        content: Text(
+          "¿Eliminar '${juego.titulo}'?",
+          style: const TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text(
+              "CANCELAR",
+              style: TextStyle(color: Colors.white54),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+            onPressed: () {
+              // Eliminar juego de Firestore
+              FirestoreService().deleteGame(juego.id!);
+              Navigator.pop(context);
+            },
+            child: const Text("ELIMINAR"),
+          ),
+        ],
       ),
     );
   }

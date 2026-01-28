@@ -5,7 +5,7 @@ import '../services/firestore_service.dart';
 class SeriesScreen extends StatelessWidget {
   const SeriesScreen({super.key});
 
-  // Lista de géneros para usar en el desplegable (Dropdown)
+  // Lista de géneros disponibles
   static const List<String> generos = [
     'Acción',
     'Comedia',
@@ -19,17 +19,15 @@ class SeriesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Definimos el color magenta neón característico de las Series
-    const Color colorSerie = Color(0xFFFF00FF);
-    const Color colorCian = Color(0xFF00FFFF);
+    const Color colorSerie = Color(0xFFFF00FF); // Magenta neón
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0D0213), // Fondo oscuro retro
+      backgroundColor: const Color(0xFF0D0213),
       body: StreamBuilder<List<Serie>>(
-        // Obtenemos los datos de la colección 'series' en tiempo real
+        // Obtener series en tiempo real desde Firestore
         stream: FirestoreService().getSeries(),
         builder: (context, snapshot) {
-          // Mientras carga, mostramos el círculo de progreso
+          // Mostrar indicador de carga mientras se obtienen los datos
           if (!snapshot.hasData) {
             return const Center(
               child: CircularProgressIndicator(color: colorSerie),
@@ -38,57 +36,61 @@ class SeriesScreen extends StatelessWidget {
 
           final series = snapshot.data!;
 
+          // Si no hay series, mostrar mensaje
+          if (series.isEmpty) {
+            return const Center(
+              child: Text(
+                'NO HAY SERIES.\nPULSA + PARA AÑADIR',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.white54, fontSize: 16),
+              ),
+            );
+          }
+
+          // Lista de series
           return ListView.builder(
             itemCount: series.length,
             padding: const EdgeInsets.all(15),
-            itemBuilder: (context, i) {
-              final s = series[i];
+            itemBuilder: (context, index) {
+              final serie = series[index];
 
-              // Diseño de la tarjeta de cada serie
               return Card(
-                color: Colors.white.withOpacity(
-                  0.05,
-                ), // Fondo sutil transparente
+                color: Colors.white.withOpacity(0.05),
                 margin: const EdgeInsets.only(bottom: 12),
                 shape: RoundedRectangleBorder(
-                  side: const BorderSide(
-                    color: colorSerie,
-                    width: 0.5,
-                  ), // Borde neón magenta
-                  borderRadius: BorderRadius.circular(10),
+                  side: const BorderSide(color: colorSerie, width: 0.5),
+                  borderRadius: BorderRadius.circular(10.0),
                 ),
                 child: ListTile(
+                  // Título de la serie
                   title: Text(
-                    s.titulo
-                        .toUpperCase(), // Título en mayúsculas para el look retro
+                    serie.titulo.toUpperCase(),
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
+
+                  // Género y puntuación
                   subtitle: Text(
-                    "${s.genero} • ${s.puntuacion}/10",
+                    "${serie.genero} • ${serie.puntuacion}/10",
                     style: const TextStyle(color: Colors.white70),
                   ),
-                  // Botones de Editar y Borrar unificados
+
+                  // Botones de editar y eliminar
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      // Botón editar
                       IconButton(
-                        icon: const Icon(
-                          Icons.edit,
-                          color: colorCian,
-                          size: 20,
-                        ),
-                        onPressed: () => _dialogoEditar(context, s),
+                        icon: const Icon(Icons.edit, color: colorSerie),
+                        onPressed: () => _mostrarDialogoEditar(context, serie),
                       ),
+
+                      // Botón eliminar
                       IconButton(
-                        icon: const Icon(
-                          Icons.delete,
-                          color: Colors.redAccent,
-                          size: 20,
-                        ),
-                        onPressed: () => FirestoreService().deleteSerie(s.id!),
+                        icon: const Icon(Icons.delete, color: Colors.redAccent),
+                        onPressed: () => _confirmarEliminar(context, serie),
                       ),
                     ],
                   ),
@@ -101,22 +103,20 @@ class SeriesScreen extends StatelessWidget {
     );
   }
 
-  // --- FUNCIÓN PARA EL DIÁLOGO DE EDICIÓN (CRUD: UPDATE) ---
-  void _dialogoEditar(BuildContext context, Serie serie) {
-    final tTitulo = TextEditingController(text: serie.titulo);
-    final tResena = TextEditingController(text: serie.resena);
-
-    // Comprobamos que el género actual exista en nuestra lista oficial
-    String generoSel = generos.contains(serie.genero)
+  // ========== DIÁLOGO PARA EDITAR SERIE ==========
+  void _mostrarDialogoEditar(BuildContext context, Serie serie) {
+    final controladorTitulo = TextEditingController(text: serie.titulo);
+    final controladorResena = TextEditingController(text: serie.resena);
+    String generoSeleccionado = generos.contains(serie.genero)
         ? serie.genero
         : generos[0];
-    int notaSel = serie.puntuacion;
+    int notaSeleccionada = serie.puntuacion;
 
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
-          backgroundColor: const Color(0xFF1A0225), // Fondo oscuro del diálogo
+          backgroundColor: const Color(0xFF1A0225),
           title: const Text(
             "EDITAR SERIE",
             style: TextStyle(color: Colors.white),
@@ -125,41 +125,70 @@ class SeriesScreen extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                // Campo de título
                 TextField(
-                  controller: tTitulo,
-                  decoration: const InputDecoration(labelText: "Título"),
+                  controller: controladorTitulo,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(
+                    labelText: "Título",
+                    labelStyle: TextStyle(color: Colors.white70),
+                  ),
                 ),
                 const SizedBox(height: 10),
-                // Campo de reseña con 2 líneas por defecto como pediste
+
+                // Campo de reseña
                 TextField(
-                  controller: tResena,
-                  decoration: const InputDecoration(labelText: "Reseña"),
+                  controller: controladorResena,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(
+                    labelText: "Reseña",
+                    labelStyle: TextStyle(color: Colors.white70),
+                  ),
                   maxLines: 2,
                 ),
                 const SizedBox(height: 15),
-                // Desplegable de Género
+
+                // Selector de género
                 DropdownButtonFormField<String>(
-                  value: generoSel,
+                  value: generoSeleccionado,
                   dropdownColor: const Color(0xFF1A0225),
-                  decoration: const InputDecoration(labelText: "Género"),
+                  style: const TextStyle(color: Color(0xFFFF00FF)),
+                  decoration: const InputDecoration(
+                    labelText: "Género",
+                    labelStyle: TextStyle(color: Colors.white70),
+                  ),
                   items: generos
-                      .map((g) => DropdownMenuItem(value: g, child: Text(g)))
-                      .toList(),
-                  onChanged: (v) => setState(() => generoSel = v!),
-                ),
-                const SizedBox(height: 15),
-                // Desplegable de Valoración
-                DropdownButtonFormField<int>(
-                  value: notaSel,
-                  dropdownColor: const Color(0xFF1A0225),
-                  decoration: const InputDecoration(labelText: "Valoración"),
-                  items: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
                       .map(
-                        (n) =>
-                            DropdownMenuItem(value: n, child: Text("Nota: $n")),
+                        (genero) => DropdownMenuItem(
+                          value: genero,
+                          child: Text(genero),
+                        ),
                       )
                       .toList(),
-                  onChanged: (v) => setState(() => notaSel = v!),
+                  onChanged: (valor) =>
+                      setState(() => generoSeleccionado = valor!),
+                ),
+                const SizedBox(height: 15),
+
+                // Selector de puntuación
+                DropdownButtonFormField<int>(
+                  value: notaSeleccionada,
+                  dropdownColor: const Color(0xFF1A0225),
+                  style: const TextStyle(color: Color(0xFFFF00FF)),
+                  decoration: const InputDecoration(
+                    labelText: "Puntuación",
+                    labelStyle: TextStyle(color: Colors.white70),
+                  ),
+                  items: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+                      .map(
+                        (nota) => DropdownMenuItem(
+                          value: nota,
+                          child: Text("Nota: $nota"),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (valor) =>
+                      setState(() => notaSeleccionada = valor!),
                 ),
               ],
             ),
@@ -174,12 +203,12 @@ class SeriesScreen extends StatelessWidget {
             ),
             ElevatedButton(
               onPressed: () {
-                // Enviamos los cambios a la base de datos
+                // Actualizar serie en Firestore
                 FirestoreService().updateSerie(serie.id!, {
-                  'titulo': tTitulo.text,
-                  'resena': tResena.text,
-                  'genero': generoSel,
-                  'puntuacion': notaSel,
+                  'titulo': controladorTitulo.text,
+                  'resena': controladorResena.text,
+                  'genero': generoSeleccionado,
+                  'puntuacion': notaSeleccionada,
                 });
                 Navigator.pop(context);
               },
@@ -187,6 +216,42 @@ class SeriesScreen extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  // ========== CONFIRMAR ANTES DE ELIMINAR ==========
+  void _confirmarEliminar(BuildContext context, Serie serie) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1A0225),
+        title: const Text(
+          "CONFIRMAR ELIMINACIÓN",
+          style: TextStyle(color: Colors.white),
+        ),
+        content: Text(
+          "¿Eliminar '${serie.titulo}'?",
+          style: const TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text(
+              "CANCELAR",
+              style: TextStyle(color: Colors.white54),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+            onPressed: () {
+              // Eliminar serie de Firestore
+              FirestoreService().deleteSerie(serie.id!);
+              Navigator.pop(context);
+            },
+            child: const Text("ELIMINAR"),
+          ),
+        ],
       ),
     );
   }
