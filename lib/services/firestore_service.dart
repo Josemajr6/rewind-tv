@@ -11,7 +11,7 @@ class FirestoreService {
   // Sacamos el ID del usuario de Google para saber quién está operando.
   String get uid => _auth.currentUser?.uid ?? "invitado";
 
-  // 1. COLECCIÓN DE SERIES (CRUD COMPLETO)
+  // COLECCIÓN DE SERIES (CRUD COMPLETO)
 
   // LEER: Usamos orderBy para forzar el uso de ÍNDICES en Firebase.
   // Esto hará que las mejores series salgan arriba.

@@ -123,7 +123,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // ========== DIÁLOGO PARA AÑADIR SERIE ==========
+  // Diálogo para añadir series
   void _dialogoAnadirSerie(BuildContext context) {
     final controladorTitulo = TextEditingController();
     final controladorResena = TextEditingController();
@@ -242,7 +242,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ========== DIÁLOGO PARA AÑADIR PELÍCULA ==========
+  // Diálogo para añadir películas
   void _dialogoAnadirPeli(BuildContext context) {
     final controladorTitulo = TextEditingController();
     final controladorDirector = TextEditingController();
@@ -333,7 +333,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ========== DIÁLOGO PARA AÑADIR JUEGO ==========
+  // Diálogo para añadir juegos
   void _dialogoAnadirJuego(BuildContext context) {
     final controladorTitulo = TextEditingController();
     String plataformaSeleccionada = 'PC';

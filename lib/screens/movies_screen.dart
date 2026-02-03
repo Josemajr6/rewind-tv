@@ -179,7 +179,7 @@ class MoviesScreen extends StatelessWidget {
     );
   }
 
-  // ========== CONFIRMAR ANTES DE ELIMINAR ==========
+  // Diálogo para confirmar antes de eliminar
   void _confirmarEliminar(BuildContext context, Movie pelicula) {
     showDialog(
       context: context,

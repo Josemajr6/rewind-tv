@@ -103,7 +103,7 @@ class SeriesScreen extends StatelessWidget {
     );
   }
 
-  // ========== DIÁLOGO PARA EDITAR SERIE ==========
+  // Diálogo para editar la serie
   void _mostrarDialogoEditar(BuildContext context, Serie serie) {
     final controladorTitulo = TextEditingController(text: serie.titulo);
     final controladorResena = TextEditingController(text: serie.resena);
@@ -220,7 +220,7 @@ class SeriesScreen extends StatelessWidget {
     );
   }
 
-  // ========== CONFIRMAR ANTES DE ELIMINAR ==========
+  // Diálogo para confirmar antes de eliminar
   void _confirmarEliminar(BuildContext context, Serie serie) {
     showDialog(
       context: context,

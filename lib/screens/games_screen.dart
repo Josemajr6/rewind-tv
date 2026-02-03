@@ -94,7 +94,7 @@ class GamesScreen extends StatelessWidget {
     );
   }
 
-  // ========== DIÁLOGO PARA EDITAR JUEGO ==========
+  // Diálogo para editar juego
   void _mostrarDialogoEditar(BuildContext context, Game juego) {
     final controladorTitulo = TextEditingController(text: juego.titulo);
     String plataformaSeleccionada = juego.plataforma;
@@ -192,7 +192,7 @@ class GamesScreen extends StatelessWidget {
     );
   }
 
-  // ========== CONFIRMAR ANTES DE ELIMINAR ==========
+  // Diálogo para confirmar antes de eliminar
   void _confirmarEliminar(BuildContext context, Game juego) {
     showDialog(
       context: context,
