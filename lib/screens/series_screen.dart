@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import '../models/serie_model.dart';
 import '../services/firestore_service.dart';
 
-class SeriesScreen extends StatelessWidget {
+class SeriesScreen extends StatefulWidget {
   const SeriesScreen({super.key});
 
-  // Lista de géneros disponibles
+  @override
+  State<SeriesScreen> createState() => _SeriesScreenState();
+
+  // Lista de géneros disponibles (static para que home_screen pueda usarla)
   static const List<String> generos = [
     'Acción',
     'Comedia',
@@ -16,6 +19,11 @@ class SeriesScreen extends StatelessWidget {
     'Aventura',
     'Documental',
   ];
+}
+
+class _SeriesScreenState extends State<SeriesScreen> {
+  // El genero que tiene el filtro activo (null = sin filtro = todas)
+  String? _generoFiltro = null;
 
   @override
   Widget build(BuildContext context) {
@@ -23,94 +31,159 @@ class SeriesScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: const Color(0xFF0D0213),
-      body: StreamBuilder<List<Serie>>(
-        // Obtener series en tiempo real desde Firestore
-        stream: FirestoreService().getSeries(),
-        builder: (context, snapshot) {
-          // Mostrar indicador de carga mientras se obtienen los datos
-          if (!snapshot.hasData) {
-            return const Center(
-              child: CircularProgressIndicator(color: colorSerie),
-            );
-          }
+      body: Column(
+        children: [
+          // ---- Barra de filtro por genero ----
+          _barraFiltro(colorSerie),
 
-          final series = snapshot.data!;
+          // ---- Lista de series desde Firestore ----
+          Expanded(
+            child: StreamBuilder<List<Serie>>(
+              // Usamos el método filtrado: si _generoFiltro es null, trae todas
+              stream:
+                  FirestoreService().getSeriesFiltradas(genero: _generoFiltro),
+              builder: (context, snapshot) {
+                // Cargando datos...
+                if (!snapshot.hasData) {
+                  return const Center(
+                    child: CircularProgressIndicator(color: colorSerie),
+                  );
+                }
 
-          // Si no hay series, mostrar mensaje
-          if (series.isEmpty) {
-            return const Center(
-              child: Text(
-                'NO HAY SERIES.\nPULSA + PARA AÑADIR',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white54, fontSize: 16),
-              ),
-            );
-          }
+                final series = snapshot.data!;
 
-          // Lista de series
-          return ListView.builder(
-            itemCount: series.length,
-            padding: const EdgeInsets.all(15),
-            itemBuilder: (context, index) {
-              final serie = series[index];
-
-              return Card(
-                color: Colors.white.withOpacity(0.05),
-                margin: const EdgeInsets.only(bottom: 12),
-                shape: RoundedRectangleBorder(
-                  side: const BorderSide(color: colorSerie, width: 0.5),
-                  borderRadius: BorderRadius.circular(10.0),
-                ),
-                child: ListTile(
-                  // Título de la serie
-                  title: Text(
-                    serie.titulo.toUpperCase(),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
+                // Si la lista está vacía, aviso al usuario
+                if (series.isEmpty) {
+                  return const Center(
+                    child: Text(
+                      'NO HAY SERIES.\nPULSA + PARA AÑADIR',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.white54, fontSize: 16),
                     ),
-                  ),
+                  );
+                }
 
-                  // Género y puntuación
-                  subtitle: Text(
-                    "${serie.genero} • ${serie.puntuacion}/10",
-                    style: const TextStyle(color: Colors.white70),
-                  ),
+                // Lista de series
+                return ListView.builder(
+                  itemCount: series.length,
+                  padding: const EdgeInsets.all(15),
+                  itemBuilder: (context, index) {
+                    final serie = series[index];
 
-                  // Botones de editar y eliminar
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Botón editar
-                      IconButton(
-                        icon: const Icon(Icons.edit, color: colorSerie),
-                        onPressed: () => _mostrarDialogoEditar(context, serie),
+                    return Card(
+                      color: Colors.white.withOpacity(0.05),
+                      margin: const EdgeInsets.only(bottom: 12),
+                      shape: RoundedRectangleBorder(
+                        side:
+                            const BorderSide(color: colorSerie, width: 0.5),
+                        borderRadius: BorderRadius.circular(10.0),
                       ),
+                      child: ListTile(
+                        // Título de la serie
+                        title: Text(
+                          serie.titulo.toUpperCase(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
 
-                      // Botón eliminar
-                      IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.redAccent),
-                        onPressed: () => _confirmarEliminar(context, serie),
+                        // Género y puntuación
+                        subtitle: Text(
+                          "${serie.genero} • ${serie.puntuacion}/10",
+                          style: const TextStyle(color: Colors.white70),
+                        ),
+
+                        // Botones de editar y eliminar
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.edit, color: colorSerie),
+                              onPressed: () =>
+                                  _mostrarDialogoEditar(context, serie),
+                            ),
+                            IconButton(
+                              icon: const Icon(
+                                Icons.delete,
+                                color: Colors.redAccent,
+                              ),
+                              onPressed: () =>
+                                  _confirmarEliminar(context, serie),
+                            ),
+                          ],
+                        ),
                       ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          );
-        },
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  // Diálogo para editar la serie
+  // Barra superior con dropdown para filtrar por genero
+  Widget _barraFiltro(Color colorSerie) {
+    return Container(
+      color: const Color(0xFF1A0225),
+      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
+      child: Row(
+        children: [
+          const Text(
+            "FILTRO:",
+            style: TextStyle(color: Colors.white54, fontSize: 12),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: DropdownButton<String?>(
+              value: _generoFiltro,
+              isExpanded: true,
+              dropdownColor: const Color(0xFF1A0225),
+              underline: Container(height: 1, color: colorSerie),
+              // Opción "Todos" para limpiar el filtro
+              items: [
+                const DropdownMenuItem<String?>(
+                  value: null,
+                  child: Text(
+                    "Todos los géneros",
+                    style: TextStyle(color: Colors.white70),
+                  ),
+                ),
+                ...SeriesScreen.generos.map(
+                  (genero) => DropdownMenuItem<String>(
+                    value: genero,
+                    child: Text(
+                      genero,
+                      style: TextStyle(color: colorSerie),
+                    ),
+                  ),
+                ),
+              ],
+              onChanged: (valor) {
+                setState(() => _generoFiltro = valor);
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Diálogo para editar la serie (con validación)
   void _mostrarDialogoEditar(BuildContext context, Serie serie) {
     final controladorTitulo = TextEditingController(text: serie.titulo);
     final controladorResena = TextEditingController(text: serie.resena);
-    String generoSeleccionado = generos.contains(serie.genero)
-        ? serie.genero
-        : generos[0];
+    String generoSeleccionado =
+        SeriesScreen.generos.contains(serie.genero)
+            ? serie.genero
+            : SeriesScreen.generos[0];
     int notaSeleccionada = serie.puntuacion;
+
+    // Variable para mostrar el error de validación dentro del diálogo
+    String? mensajeError;
 
     showDialog(
       context: context,
@@ -157,7 +230,7 @@ class SeriesScreen extends StatelessWidget {
                     labelText: "Género",
                     labelStyle: TextStyle(color: Colors.white70),
                   ),
-                  items: generos
+                  items: SeriesScreen.generos
                       .map(
                         (genero) => DropdownMenuItem(
                           value: genero,
@@ -190,6 +263,16 @@ class SeriesScreen extends StatelessWidget {
                   onChanged: (valor) =>
                       setState(() => notaSeleccionada = valor!),
                 ),
+
+                // Mensaje de error si la validación falla
+                if (mensajeError != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10),
+                    child: Text(
+                      mensajeError!,
+                      style: const TextStyle(color: Colors.redAccent),
+                    ),
+                  ),
               ],
             ),
           ),
@@ -203,10 +286,16 @@ class SeriesScreen extends StatelessWidget {
             ),
             ElevatedButton(
               onPressed: () {
-                // Actualizar serie en Firestore
+                // Validación: el título no puede estar vacío ni ser solo espacios
+                if (controladorTitulo.text.trim().isEmpty) {
+                  setState(() => mensajeError = "El título no puede estar vacío");
+                  return;
+                }
+
+                // Actualizar serie en Firestore con datos validados
                 FirestoreService().updateSerie(serie.id!, {
-                  'titulo': controladorTitulo.text,
-                  'resena': controladorResena.text,
+                  'titulo': controladorTitulo.text.trim(),
+                  'resena': controladorResena.text.trim(),
                   'genero': generoSeleccionado,
                   'puntuacion': notaSeleccionada,
                 });
@@ -243,7 +332,8 @@ class SeriesScreen extends StatelessWidget {
             ),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+            style:
+                ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
             onPressed: () {
               // Eliminar serie de Firestore
               FirestoreService().deleteSerie(serie.id!);

@@ -123,12 +123,17 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // Diálogo para añadir series
+  // ============================================================
+  // Diálogo para añadir series (con validación)
+  // ============================================================
   void _dialogoAnadirSerie(BuildContext context) {
     final controladorTitulo = TextEditingController();
     final controladorResena = TextEditingController();
     String generoSeleccionado = SeriesScreen.generos[0];
     int notaSeleccionada = 5;
+
+    // Variable para mostrar mensajes de error dentro del diálogo
+    String? mensajeError;
 
     showDialog(
       context: context,
@@ -208,6 +213,16 @@ class _HomeScreenState extends State<HomeScreen> {
                   onChanged: (valor) =>
                       setState(() => notaSeleccionada = valor!),
                 ),
+
+                // Mensaje de error si la validación falla
+                if (mensajeError != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10),
+                    child: Text(
+                      mensajeError!,
+                      style: const TextStyle(color: Colors.redAccent),
+                    ),
+                  ),
               ],
             ),
           ),
@@ -221,18 +236,23 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             ElevatedButton(
               onPressed: () {
-                if (controladorTitulo.text.isNotEmpty) {
-                  // Añadir serie a Firestore
-                  FirestoreService().addSerie(
-                    Serie(
-                      titulo: controladorTitulo.text,
-                      resena: controladorResena.text,
-                      genero: generoSeleccionado,
-                      puntuacion: notaSeleccionada,
-                    ),
-                  );
-                  Navigator.pop(context);
+                // Validación: título obligatorio y sin espacios sueltos
+                if (controladorTitulo.text.trim().isEmpty) {
+                  setState(
+                      () => mensajeError = "El título no puede estar vacío");
+                  return;
                 }
+
+                // Todo correcto, añadimos la serie a Firestore
+                FirestoreService().addSerie(
+                  Serie(
+                    titulo: controladorTitulo.text.trim(),
+                    resena: controladorResena.text.trim(),
+                    genero: generoSeleccionado,
+                    puntuacion: notaSeleccionada,
+                  ),
+                );
+                Navigator.pop(context);
               },
               child: const Text("GUARDAR"),
             ),
@@ -242,11 +262,16 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // Diálogo para añadir películas
+  // ============================================================
+  // Diálogo para añadir películas (con validación)
+  // ============================================================
   void _dialogoAnadirPeli(BuildContext context) {
     final controladorTitulo = TextEditingController();
     final controladorDirector = TextEditingController();
     int notaSeleccionada = 5;
+
+    // Para mostrar errores de validación
+    String? mensajeError;
 
     showDialog(
       context: context,
@@ -299,8 +324,19 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     )
                     .toList(),
-                onChanged: (valor) => setState(() => notaSeleccionada = valor!),
+                onChanged: (valor) =>
+                    setState(() => notaSeleccionada = valor!),
               ),
+
+              // Mensaje de error
+              if (mensajeError != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: Text(
+                    mensajeError!,
+                    style: const TextStyle(color: Colors.redAccent),
+                  ),
+                ),
             ],
           ),
           actions: [
@@ -313,17 +349,28 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             ElevatedButton(
               onPressed: () {
-                if (controladorTitulo.text.isNotEmpty) {
-                  // Añadir película a Firestore
-                  FirestoreService().addMovie(
-                    Movie(
-                      titulo: controladorTitulo.text,
-                      director: controladorDirector.text,
-                      puntuacion: notaSeleccionada,
-                    ),
-                  );
-                  Navigator.pop(context);
+                // Validación: título obligatorio
+                if (controladorTitulo.text.trim().isEmpty) {
+                  setState(
+                      () => mensajeError = "El título no puede estar vacío");
+                  return;
                 }
+                // Validación: director obligatorio
+                if (controladorDirector.text.trim().isEmpty) {
+                  setState(
+                      () => mensajeError = "El director no puede estar vacío");
+                  return;
+                }
+
+                // Añadir película a Firestore con datos limpios
+                FirestoreService().addMovie(
+                  Movie(
+                    titulo: controladorTitulo.text.trim(),
+                    director: controladorDirector.text.trim(),
+                    puntuacion: notaSeleccionada,
+                  ),
+                );
+                Navigator.pop(context);
               },
               child: const Text("GUARDAR"),
             ),
@@ -333,11 +380,16 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // Diálogo para añadir juegos
+  // ============================================================
+  // Diálogo para añadir juegos (con validación)
+  // ============================================================
   void _dialogoAnadirJuego(BuildContext context) {
     final controladorTitulo = TextEditingController();
     String plataformaSeleccionada = 'PC';
     int notaSeleccionada = 5;
+
+    // Para mostrar errores de validación
+    String? mensajeError;
 
     showDialog(
       context: context,
@@ -371,7 +423,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   labelText: "Plataforma",
                   labelStyle: TextStyle(color: Colors.white70),
                 ),
-                items: ['PC', 'PS5', 'Switch', 'Xbox']
+                items: GamesScreen.plataformas
                     .map(
                       (plataforma) => DropdownMenuItem(
                         value: plataforma,
@@ -401,8 +453,19 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     )
                     .toList(),
-                onChanged: (valor) => setState(() => notaSeleccionada = valor!),
+                onChanged: (valor) =>
+                    setState(() => notaSeleccionada = valor!),
               ),
+
+              // Mensaje de error
+              if (mensajeError != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: Text(
+                    mensajeError!,
+                    style: const TextStyle(color: Colors.redAccent),
+                  ),
+                ),
             ],
           ),
           actions: [
@@ -415,18 +478,23 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             ElevatedButton(
               onPressed: () {
-                if (controladorTitulo.text.isNotEmpty) {
-                  // Añadir juego a Firestore
-                  FirestoreService().addGame(
-                    Game(
-                      titulo: controladorTitulo.text,
-                      plataforma: plataformaSeleccionada,
-                      estado: "Jugando",
-                      puntuacion: notaSeleccionada,
-                    ),
-                  );
-                  Navigator.pop(context);
+                // Validación: título obligatorio
+                if (controladorTitulo.text.trim().isEmpty) {
+                  setState(
+                      () => mensajeError = "El título no puede estar vacío");
+                  return;
                 }
+
+                // Añadir juego a Firestore con datos limpios
+                FirestoreService().addGame(
+                  Game(
+                    titulo: controladorTitulo.text.trim(),
+                    plataforma: plataformaSeleccionada,
+                    estado: "Jugando",
+                    puntuacion: notaSeleccionada,
+                  ),
+                );
+                Navigator.pop(context);
               },
               child: const Text("GUARDAR"),
             ),
