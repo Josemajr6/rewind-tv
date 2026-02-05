@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 
-// Importaciones de pantallas
 import 'screens/auth_screen.dart';
 import 'screens/home_screen.dart';
 
@@ -25,22 +24,30 @@ class RewindTVApp extends StatelessWidget {
         '/home': (context) => const HomeScreen(),
       },
       theme: ThemeData(
+        // Activamos Material 3 para diseños modernos (borde redondeados suaves, efectos de pulsación, etc)
+        useMaterial3: true,
         brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xFF0D0213),
-        fontFamily: 'monospace',
-        colorScheme: const ColorScheme.dark(
-          primary: Color(0xFFFF00FF),
-          secondary: Color(0xFF00FFFF),
-          surface: Color(0xFF1A0225),
+
+        // Esto es lo que ahorra código: Generamos toda la paleta desde un solo color base
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFFFF00FF), // Magenta base
+          brightness: Brightness.dark,
+          surface: const Color(
+            0xFF1E1E2C,
+          ), // Color para las tarjetas/diálogos (gris azulado moderno)
+          primary: const Color(0xFFFF00FF),
+          secondary: const Color(0xFF00FFFF), // Cian para acentos
         ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFFFF00FF),
-            foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(30.0),
-            ),
-          ),
+
+        // Fondo principal oscuro pero limpio
+        scaffoldBackgroundColor: const Color(0xFF0D0213),
+
+        appBarTheme: const AppBarTheme(
+          backgroundColor:
+              Colors.transparent, // Barra transparente estilo moderno
+          elevation: 0,
+          centerTitle: true,
+          titleTextStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
         ),
       ),
     );

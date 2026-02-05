@@ -6,7 +6,6 @@ import '../models/serie_model.dart';
 import '../models/movie_model.dart';
 import '../models/game_model.dart';
 
-// Importo las pantallas de colecciones y la nueva de perfil
 import 'series_screen.dart';
 import 'movies_screen.dart';
 import 'games_screen.dart';
@@ -20,16 +19,14 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // Control de la pestaña actual (0: Series, 1: Pelis, 2: Juegos, 3: Perfil)
   int _currentIndex = 0;
 
-  // Colores neón para cada sección
-  static const Color colorSerie = Color(0xFFFF00FF); // Magenta
-  static const Color colorPeli = Color(0xFF00FFFF); // Cian
-  static const Color colorJuego = Color(0xFF00FF66); // Verde
-  static const Color colorPerfil = Color(0xFFFFD700); // Dorado
+  // Colores Neón por sección
+  static const Color colorSerie = Color(0xFFFF00FF);
+  static const Color colorPeli = Color(0xFF00FFFF);
+  static const Color colorJuego = Color(0xFF00FF66);
+  static const Color colorPerfil = Color(0xFFFFD700);
 
-  // Lista de pantallas
   final List<Widget> _paginas = const [
     SeriesScreen(),
     MoviesScreen(),
@@ -39,84 +36,133 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // 1. Recupero la info del usuario para el saludo de la barra superior.
+    // Info usuario
     final user = AuthService().currentUser;
-    // Si hay nombre, cojo la primera palabra, si no, pongo "INVITADO".
     final String nombre =
         user?.displayName?.split(" ")[0].toUpperCase() ?? "INVITADO";
 
-    return Scaffold(
-      backgroundColor: const Color(0xFF0D0213),
+    // Guardo el color actual para usarlo en la UI
+    final Color colorActual = _obtenerColorActual();
 
-      // 2. AppBar restaurado con el saludo a la izquierda y logo en el centro.
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+
+      // --- 1. APPBAR LIMPIO ---
       appBar: AppBar(
-        backgroundColor: Colors.black,
-        // Doy anchura al leading para que quepa el texto "HOLA, ..."
-        leadingWidth: 120,
-        leading: Center(
-          child: Text(
-            "HOLA, $nombre",
-            style: TextStyle(
-              // Uso el color de la sección actual para que vaya a juego
-              color: _obtenerColorActual(),
-              fontSize: 10,
-              fontWeight: FontWeight.bold,
+        leadingWidth: 150, // Espacio suficiente para que no se corte
+        leading: Align(
+          alignment: Alignment.centerLeft, // Alineado a la izquierda limpio
+          child: Padding(
+            padding: const EdgeInsets.only(left: 16.0),
+            child: Text(
+              "Hola, $nombre", // Sin cápsulas, texto limpio
+              style: TextStyle(
+                color: colorActual, // El color cambia según la sección
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.0,
+                // Un pequeño brillo en el texto para que destaque del fondo negro
+                shadows: [
+                  Shadow(color: colorActual.withOpacity(0.8), blurRadius: 10),
+                ],
+              ),
             ),
           ),
         ),
-        // Logo de RewindTV en el centro
-        title: Image.asset('assets/logo.png', height: 30),
+        title: Image.asset('assets/logo.png', height: 32),
         centerTitle: true,
-        // He dejado las acciones (derecha) vacías porque el botón de salir
-        // ahora vive, con más sentido, dentro de la pantalla de Perfil.
+        backgroundColor: Colors.transparent, // Se integra con el fondo
+        elevation: 0,
       ),
 
-      // Cuerpo de la app (cambia según la pestaña)
       body: _paginas[_currentIndex],
 
-      // Barra de navegación inferior
-      bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: Colors.black,
-        type: BottomNavigationBarType.fixed,
-        currentIndex: _currentIndex,
-        selectedItemColor: _obtenerColorActual(),
-        unselectedItemColor: Colors.white24,
-        onTap: (index) => setState(() => _currentIndex = index),
-        items: const [
-          BottomNavigationBarItem(
-            icon: FaIcon(FontAwesomeIcons.tv),
-            label: 'SERIES',
+      // --- 2. BARRA INFERIOR MEJORADA ---
+      bottomNavigationBar: Container(
+        // Decoración del contenedor de la barra
+        decoration: BoxDecoration(
+          color: Colors.black, // Fondo negro puro
+          // Aquí está el truco: Una línea de borde arriba que cambia de color
+          border: Border(
+            top: BorderSide(
+              color: colorActual, // La línea es del color de la sección
+              width: 2.0, // Grosor visible
+            ),
           ),
-          BottomNavigationBarItem(
-            icon: FaIcon(FontAwesomeIcons.film),
-            label: 'PELIS',
-          ),
-          BottomNavigationBarItem(
-            icon: FaIcon(FontAwesomeIcons.gamepad),
-            label: 'JUEGOS',
-          ),
-          BottomNavigationBarItem(
-            icon: FaIcon(FontAwesomeIcons.userAstronaut),
-            label: 'PERFIL',
-          ),
-        ],
+          // Sombra hacia arriba (glow)
+          boxShadow: [
+            BoxShadow(
+              color: colorActual.withOpacity(
+                0.4,
+              ), // Resplandor del color actual
+              blurRadius: 15, // Difuminado
+              offset: const Offset(0, -4), // Hacia arriba
+            ),
+          ],
+        ),
+        child: BottomNavigationBar(
+          backgroundColor: Colors.transparent, // Para ver el container de abajo
+          elevation: 0,
+          type: BottomNavigationBarType.fixed,
+          currentIndex: _currentIndex,
+
+          // Estilos de los items
+          selectedItemColor: colorActual, // El texto e icono activo brilla
+          unselectedItemColor: Colors.grey.shade700, // Los inactivos, apagados
+
+          selectedFontSize: 12,
+          unselectedFontSize: 10,
+
+          // El icono seleccionado crece un poco
+          selectedIconTheme: const IconThemeData(size: 26),
+          unselectedIconTheme: const IconThemeData(size: 20),
+
+          onTap: (index) => setState(() => _currentIndex = index),
+          items: const [
+            BottomNavigationBarItem(
+              icon: FaIcon(FontAwesomeIcons.tv),
+              label: 'SERIES',
+            ),
+            BottomNavigationBarItem(
+              icon: FaIcon(FontAwesomeIcons.film),
+              label: 'PELIS',
+            ),
+            BottomNavigationBarItem(
+              icon: FaIcon(FontAwesomeIcons.gamepad),
+              label: 'JUEGOS',
+            ),
+            BottomNavigationBarItem(
+              icon: FaIcon(FontAwesomeIcons.userAstronaut),
+              label: 'PERFIL',
+            ),
+          ],
+        ),
       ),
 
-      // Oculto el botón flotante si estoy en el perfil
+      // Botón flotante (con brillo también)
       floatingActionButton: _currentIndex == 3
           ? null
-          : FloatingActionButton(
-              backgroundColor: _obtenerColorActual(),
-              child: const Icon(Icons.add, color: Colors.black),
-              onPressed: () => _abrirDialogoAnadir(context),
+          : Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: colorActual.withOpacity(0.5),
+                    blurRadius: 12,
+                    spreadRadius: 1,
+                  ),
+                ],
+              ),
+              child: FloatingActionButton(
+                backgroundColor: colorActual,
+                child: const Icon(Icons.add, color: Colors.black),
+                onPressed: () => _abrirDialogoAnadir(context),
+              ),
             ),
     );
   }
 
-  // ============================================================
-  // Helpers y Lógica de Diálogos (Igual que antes)
-  // ============================================================
-
+  // --- Lógica de colores ---
   Color _obtenerColorActual() {
     if (_currentIndex == 0) return colorSerie;
     if (_currentIndex == 1) return colorPeli;
@@ -125,16 +171,19 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _abrirDialogoAnadir(BuildContext context) {
-    if (_currentIndex == 0) {
+    if (_currentIndex == 0)
       _dialogoAnadirSerie(context);
-    } else if (_currentIndex == 1) {
+    else if (_currentIndex == 1)
       _dialogoAnadirPeli(context);
-    } else if (_currentIndex == 2) {
+    else if (_currentIndex == 2)
       _dialogoAnadirJuego(context);
-    }
   }
 
-  // --- DIÁLOGO SERIES ---
+  // ============================================================
+  // DIÁLOGOS (ESTILO NEÓN - MANTENIDOS)
+  // ============================================================
+
+  // --- SERIES ---
   void _dialogoAnadirSerie(BuildContext context) {
     final controladorTitulo = TextEditingController();
     final controladorResena = TextEditingController();
@@ -146,10 +195,23 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
-          backgroundColor: const Color(0xFF1A0225),
-          title: const Text(
+          backgroundColor: const Color(
+            0xFF100010,
+          ), // Fondo muy oscuro casi negro
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+            side: BorderSide(color: colorSerie, width: 2), // Borde Neón
+          ),
+          shadowColor: colorSerie.withOpacity(0.6),
+          elevation: 25,
+          title: Text(
             "NUEVA SERIE",
-            style: TextStyle(color: Colors.white),
+            style: TextStyle(
+              color: colorSerie,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.5,
+            ),
+            textAlign: TextAlign.center,
           ),
           content: SingleChildScrollView(
             child: Column(
@@ -160,42 +222,39 @@ class _HomeScreenState extends State<HomeScreen> {
                   style: const TextStyle(color: Colors.white),
                   decoration: const InputDecoration(
                     labelText: "Título",
-                    labelStyle: TextStyle(color: Colors.white70),
+                    prefixIcon: Icon(Icons.tv, color: Colors.white54),
                   ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 15),
                 TextField(
                   controller: controladorResena,
                   style: const TextStyle(color: Colors.white),
                   decoration: const InputDecoration(
                     labelText: "Reseña",
-                    labelStyle: TextStyle(color: Colors.white70),
+                    prefixIcon: Icon(Icons.edit, color: Colors.white54),
                   ),
                   maxLines: 2,
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 15),
                 DropdownButtonFormField<String>(
                   value: generoSeleccionado,
-                  dropdownColor: const Color(0xFF1A0225),
-                  style: const TextStyle(color: colorSerie),
-                  decoration: const InputDecoration(
-                    labelText: "Género",
-                    labelStyle: TextStyle(color: Colors.white70),
-                  ),
+                  dropdownColor: const Color(0xFF200520),
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(labelText: "Género"),
                   items: SeriesScreen.generos
                       .map((g) => DropdownMenuItem(value: g, child: Text(g)))
                       .toList(),
                   onChanged: (v) => setState(() => generoSeleccionado = v!),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 15),
                 DropdownButtonFormField<int>(
                   value: notaSeleccionada,
-                  dropdownColor: const Color(0xFF1A0225),
-                  style: const TextStyle(color: colorSerie),
-                  decoration: const InputDecoration(
-                    labelText: "Puntuación",
-                    labelStyle: TextStyle(color: Colors.white70),
+                  dropdownColor: const Color(0xFF200520),
+                  style: const TextStyle(
+                    color: colorSerie,
+                    fontWeight: FontWeight.bold,
                   ),
+                  decoration: const InputDecoration(labelText: "Puntuación"),
                   items: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
                       .map(
                         (n) =>
@@ -206,7 +265,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 if (mensajeError != null)
                   Padding(
-                    padding: const EdgeInsets.only(top: 10),
+                    padding: const EdgeInsets.only(top: 15),
                     child: Text(
                       mensajeError!,
                       style: const TextStyle(color: Colors.redAccent),
@@ -224,11 +283,13 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: colorSerie,
+                foregroundColor: Colors.black,
+              ),
               onPressed: () {
                 if (controladorTitulo.text.trim().isEmpty) {
-                  setState(
-                    () => mensajeError = "El título no puede estar vacío",
-                  );
+                  setState(() => mensajeError = "Pon un título");
                   return;
                 }
                 FirestoreService().addSerie(
@@ -249,7 +310,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // --- DIÁLOGO PELIS ---
+  // --- PELIS ---
   void _dialogoAnadirPeli(BuildContext context) {
     final controladorTitulo = TextEditingController();
     final controladorDirector = TextEditingController();
@@ -260,10 +321,21 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
-          backgroundColor: const Color(0xFF1A0225),
-          title: const Text(
+          backgroundColor: const Color(0xFF001010),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+            side: BorderSide(color: colorPeli, width: 2),
+          ),
+          shadowColor: colorPeli.withOpacity(0.6),
+          elevation: 25,
+          title: Text(
             "NUEVA PELÍCULA",
-            style: TextStyle(color: Colors.white),
+            style: TextStyle(
+              color: colorPeli,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.5,
+            ),
+            textAlign: TextAlign.center,
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -273,27 +345,27 @@ class _HomeScreenState extends State<HomeScreen> {
                 style: const TextStyle(color: Colors.white),
                 decoration: const InputDecoration(
                   labelText: "Título",
-                  labelStyle: TextStyle(color: Colors.white70),
+                  prefixIcon: Icon(Icons.movie, color: Colors.white54),
                 ),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 15),
               TextField(
                 controller: controladorDirector,
                 style: const TextStyle(color: Colors.white),
                 decoration: const InputDecoration(
                   labelText: "Director",
-                  labelStyle: TextStyle(color: Colors.white70),
+                  prefixIcon: Icon(Icons.person, color: Colors.white54),
                 ),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 15),
               DropdownButtonFormField<int>(
                 value: notaSeleccionada,
-                dropdownColor: const Color(0xFF1A0225),
-                style: const TextStyle(color: colorPeli),
-                decoration: const InputDecoration(
-                  labelText: "Puntuación",
-                  labelStyle: TextStyle(color: Colors.white70),
+                dropdownColor: const Color(0xFF052020),
+                style: const TextStyle(
+                  color: colorPeli,
+                  fontWeight: FontWeight.bold,
                 ),
+                decoration: const InputDecoration(labelText: "Puntuación"),
                 items: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
                     .map(
                       (n) =>
@@ -304,7 +376,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               if (mensajeError != null)
                 Padding(
-                  padding: const EdgeInsets.only(top: 10),
+                  padding: const EdgeInsets.only(top: 15),
                   child: Text(
                     mensajeError!,
                     style: const TextStyle(color: Colors.redAccent),
@@ -321,17 +393,17 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: colorPeli,
+                foregroundColor: Colors.black,
+              ),
               onPressed: () {
                 if (controladorTitulo.text.trim().isEmpty) {
-                  setState(
-                    () => mensajeError = "El título no puede estar vacío",
-                  );
+                  setState(() => mensajeError = "Título obligatorio");
                   return;
                 }
                 if (controladorDirector.text.trim().isEmpty) {
-                  setState(
-                    () => mensajeError = "El director no puede estar vacío",
-                  );
+                  setState(() => mensajeError = "Director obligatorio");
                   return;
                 }
                 FirestoreService().addMovie(
@@ -351,7 +423,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // --- DIÁLOGO JUEGOS ---
+  // --- JUEGOS ---
   void _dialogoAnadirJuego(BuildContext context) {
     final controladorTitulo = TextEditingController();
     String plataformaSeleccionada = 'PC';
@@ -362,10 +434,21 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
-          backgroundColor: const Color(0xFF1A0225),
-          title: const Text(
+          backgroundColor: const Color(0xFF001005),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+            side: BorderSide(color: colorJuego, width: 2),
+          ),
+          shadowColor: colorJuego.withOpacity(0.6),
+          elevation: 25,
+          title: Text(
             "NUEVO JUEGO",
-            style: TextStyle(color: Colors.white),
+            style: TextStyle(
+              color: colorJuego,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.5,
+            ),
+            textAlign: TextAlign.center,
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -375,32 +458,29 @@ class _HomeScreenState extends State<HomeScreen> {
                 style: const TextStyle(color: Colors.white),
                 decoration: const InputDecoration(
                   labelText: "Título",
-                  labelStyle: TextStyle(color: Colors.white70),
+                  prefixIcon: Icon(Icons.gamepad, color: Colors.white54),
                 ),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 15),
               DropdownButtonFormField<String>(
                 value: plataformaSeleccionada,
-                dropdownColor: const Color(0xFF1A0225),
-                style: const TextStyle(color: colorJuego),
-                decoration: const InputDecoration(
-                  labelText: "Plataforma",
-                  labelStyle: TextStyle(color: Colors.white70),
-                ),
+                dropdownColor: const Color(0xFF052010),
+                style: const TextStyle(color: Colors.white),
+                decoration: const InputDecoration(labelText: "Plataforma"),
                 items: GamesScreen.plataformas
                     .map((p) => DropdownMenuItem(value: p, child: Text(p)))
                     .toList(),
                 onChanged: (v) => setState(() => plataformaSeleccionada = v!),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 15),
               DropdownButtonFormField<int>(
                 value: notaSeleccionada,
-                dropdownColor: const Color(0xFF1A0225),
-                style: const TextStyle(color: colorJuego),
-                decoration: const InputDecoration(
-                  labelText: "Puntuación",
-                  labelStyle: TextStyle(color: Colors.white70),
+                dropdownColor: const Color(0xFF052010),
+                style: const TextStyle(
+                  color: colorJuego,
+                  fontWeight: FontWeight.bold,
                 ),
+                decoration: const InputDecoration(labelText: "Puntuación"),
                 items: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
                     .map(
                       (n) =>
@@ -411,7 +491,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               if (mensajeError != null)
                 Padding(
-                  padding: const EdgeInsets.only(top: 10),
+                  padding: const EdgeInsets.only(top: 15),
                   child: Text(
                     mensajeError!,
                     style: const TextStyle(color: Colors.redAccent),
@@ -428,11 +508,13 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: colorJuego,
+                foregroundColor: Colors.black,
+              ),
               onPressed: () {
                 if (controladorTitulo.text.trim().isEmpty) {
-                  setState(
-                    () => mensajeError = "El título no puede estar vacío",
-                  );
+                  setState(() => mensajeError = "Título obligatorio");
                   return;
                 }
                 FirestoreService().addGame(
