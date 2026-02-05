@@ -14,11 +14,11 @@
       },
       "oauth_client": [
         {
-          "client_id": "72790444750-b9gee04uas13gsjhsn9lp8jdt21pk1hv.apps.googleusercontent.com",
+          "client_id": "72790444750-k6ded2gdvaohgh5t56d92nt7pcq77897.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.example.rewind_tv",
-            "certificate_hash": "52005901ba63ea5e938ece42baa01defb1b5a3e4"
+            "certificate_hash": "e7b97295bd095934c12a44189847c23926414224"
           }
         },
         {

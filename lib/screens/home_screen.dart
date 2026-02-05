@@ -6,10 +6,11 @@ import '../models/serie_model.dart';
 import '../models/movie_model.dart';
 import '../models/game_model.dart';
 
-// Importar las 3 pantallas de colecciones
+// Importo las pantallas de colecciones y la nueva de perfil
 import 'series_screen.dart';
 import 'movies_screen.dart';
 import 'games_screen.dart';
+import 'profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -19,63 +20,64 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // Control de la pestaña actual
+  // Control de la pestaña actual (0: Series, 1: Pelis, 2: Juegos, 3: Perfil)
   int _currentIndex = 0;
 
   // Colores neón para cada sección
   static const Color colorSerie = Color(0xFFFF00FF); // Magenta
   static const Color colorPeli = Color(0xFF00FFFF); // Cian
   static const Color colorJuego = Color(0xFF00FF66); // Verde
+  static const Color colorPerfil = Color(0xFFFFD700); // Dorado
 
-  // Las 3 pantallas de colecciones
+  // Lista de pantallas
   final List<Widget> _paginas = const [
     SeriesScreen(),
     MoviesScreen(),
     GamesScreen(),
+    ProfileScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
+    // 1. Recupero la info del usuario para el saludo de la barra superior.
     final user = AuthService().currentUser;
-    final String nombre = user?.displayName?.split(" ")[0] ?? "INVITADO";
+    // Si hay nombre, cojo la primera palabra, si no, pongo "INVITADO".
+    final String nombre =
+        user?.displayName?.split(" ")[0].toUpperCase() ?? "INVITADO";
 
     return Scaffold(
       backgroundColor: const Color(0xFF0D0213),
 
-      // AppBar con logo y botón de salir
+      // 2. AppBar restaurado con el saludo a la izquierda y logo en el centro.
       appBar: AppBar(
         backgroundColor: Colors.black,
+        // Doy anchura al leading para que quepa el texto "HOLA, ..."
         leadingWidth: 120,
         leading: Center(
           child: Text(
             "HOLA, $nombre",
             style: TextStyle(
+              // Uso el color de la sección actual para que vaya a juego
               color: _obtenerColorActual(),
               fontSize: 10,
               fontWeight: FontWeight.bold,
             ),
           ),
         ),
+        // Logo de RewindTV en el centro
         title: Image.asset('assets/logo.png', height: 30),
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const FaIcon(
-              FontAwesomeIcons.rightFromBracket,
-              color: Colors.white54,
-              size: 18,
-            ),
-            onPressed: () => AuthService().signOut(context),
-          ),
-        ],
+        // He dejado las acciones (derecha) vacías porque el botón de salir
+        // ahora vive, con más sentido, dentro de la pantalla de Perfil.
       ),
 
-      // Mostrar la pantalla según la pestaña seleccionada
+      // Cuerpo de la app (cambia según la pestaña)
       body: _paginas[_currentIndex],
 
-      // Navegación inferior con 3 pestañas
+      // Barra de navegación inferior
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: Colors.black,
+        type: BottomNavigationBarType.fixed,
         currentIndex: _currentIndex,
         selectedItemColor: _obtenerColorActual(),
         unselectedItemColor: Colors.white24,
@@ -93,46 +95,51 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: FaIcon(FontAwesomeIcons.gamepad),
             label: 'JUEGOS',
           ),
+          BottomNavigationBarItem(
+            icon: FaIcon(FontAwesomeIcons.userAstronaut),
+            label: 'PERFIL',
+          ),
         ],
       ),
 
-      // Botón flotante para añadir elementos
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: _obtenerColorActual(),
-        child: const Icon(Icons.add, color: Colors.black),
-        onPressed: () => _abrirDialogoAnadir(context),
-      ),
+      // Oculto el botón flotante si estoy en el perfil
+      floatingActionButton: _currentIndex == 3
+          ? null
+          : FloatingActionButton(
+              backgroundColor: _obtenerColorActual(),
+              child: const Icon(Icons.add, color: Colors.black),
+              onPressed: () => _abrirDialogoAnadir(context),
+            ),
     );
   }
 
-  // Obtener el color según la pestaña actual
+  // ============================================================
+  // Helpers y Lógica de Diálogos (Igual que antes)
+  // ============================================================
+
   Color _obtenerColorActual() {
     if (_currentIndex == 0) return colorSerie;
     if (_currentIndex == 1) return colorPeli;
-    return colorJuego;
+    if (_currentIndex == 2) return colorJuego;
+    return colorPerfil;
   }
 
-  // Abrir el diálogo correspondiente según la pestaña
   void _abrirDialogoAnadir(BuildContext context) {
     if (_currentIndex == 0) {
       _dialogoAnadirSerie(context);
     } else if (_currentIndex == 1) {
       _dialogoAnadirPeli(context);
-    } else {
+    } else if (_currentIndex == 2) {
       _dialogoAnadirJuego(context);
     }
   }
 
-  // ============================================================
-  // Diálogo para añadir series (con validación)
-  // ============================================================
+  // --- DIÁLOGO SERIES ---
   void _dialogoAnadirSerie(BuildContext context) {
     final controladorTitulo = TextEditingController();
     final controladorResena = TextEditingController();
     String generoSeleccionado = SeriesScreen.generos[0];
     int notaSeleccionada = 5;
-
-    // Variable para mostrar mensajes de error dentro del diálogo
     String? mensajeError;
 
     showDialog(
@@ -148,7 +155,6 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Campo de título
                 TextField(
                   controller: controladorTitulo,
                   style: const TextStyle(color: Colors.white),
@@ -158,8 +164,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 const SizedBox(height: 10),
-
-                // Campo de reseña
                 TextField(
                   controller: controladorResena,
                   style: const TextStyle(color: Colors.white),
@@ -170,8 +174,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   maxLines: 2,
                 ),
                 const SizedBox(height: 10),
-
-                // Selector de género
                 DropdownButtonFormField<String>(
                   value: generoSeleccionado,
                   dropdownColor: const Color(0xFF1A0225),
@@ -181,19 +183,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     labelStyle: TextStyle(color: Colors.white70),
                   ),
                   items: SeriesScreen.generos
-                      .map(
-                        (genero) => DropdownMenuItem(
-                          value: genero,
-                          child: Text(genero),
-                        ),
-                      )
+                      .map((g) => DropdownMenuItem(value: g, child: Text(g)))
                       .toList(),
-                  onChanged: (valor) =>
-                      setState(() => generoSeleccionado = valor!),
+                  onChanged: (v) => setState(() => generoSeleccionado = v!),
                 ),
                 const SizedBox(height: 10),
-
-                // Selector de puntuación
                 DropdownButtonFormField<int>(
                   value: notaSeleccionada,
                   dropdownColor: const Color(0xFF1A0225),
@@ -204,17 +198,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   items: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
                       .map(
-                        (nota) => DropdownMenuItem(
-                          value: nota,
-                          child: Text("Nota: $nota"),
-                        ),
+                        (n) =>
+                            DropdownMenuItem(value: n, child: Text("Nota: $n")),
                       )
                       .toList(),
-                  onChanged: (valor) =>
-                      setState(() => notaSeleccionada = valor!),
+                  onChanged: (v) => setState(() => notaSeleccionada = v!),
                 ),
-
-                // Mensaje de error si la validación falla
                 if (mensajeError != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 10),
@@ -236,14 +225,12 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             ElevatedButton(
               onPressed: () {
-                // Validación: título obligatorio y sin espacios sueltos
                 if (controladorTitulo.text.trim().isEmpty) {
                   setState(
-                      () => mensajeError = "El título no puede estar vacío");
+                    () => mensajeError = "El título no puede estar vacío",
+                  );
                   return;
                 }
-
-                // Todo correcto, añadimos la serie a Firestore
                 FirestoreService().addSerie(
                   Serie(
                     titulo: controladorTitulo.text.trim(),
@@ -262,15 +249,11 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ============================================================
-  // Diálogo para añadir películas (con validación)
-  // ============================================================
+  // --- DIÁLOGO PELIS ---
   void _dialogoAnadirPeli(BuildContext context) {
     final controladorTitulo = TextEditingController();
     final controladorDirector = TextEditingController();
     int notaSeleccionada = 5;
-
-    // Para mostrar errores de validación
     String? mensajeError;
 
     showDialog(
@@ -285,7 +268,6 @@ class _HomeScreenState extends State<HomeScreen> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Campo de título
               TextField(
                 controller: controladorTitulo,
                 style: const TextStyle(color: Colors.white),
@@ -295,8 +277,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const SizedBox(height: 10),
-
-              // Campo de director
               TextField(
                 controller: controladorDirector,
                 style: const TextStyle(color: Colors.white),
@@ -306,8 +286,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const SizedBox(height: 10),
-
-              // Selector de puntuación
               DropdownButtonFormField<int>(
                 value: notaSeleccionada,
                 dropdownColor: const Color(0xFF1A0225),
@@ -318,17 +296,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 items: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
                     .map(
-                      (nota) => DropdownMenuItem(
-                        value: nota,
-                        child: Text("Nota: $nota"),
-                      ),
+                      (n) =>
+                          DropdownMenuItem(value: n, child: Text("Nota: $n")),
                     )
                     .toList(),
-                onChanged: (valor) =>
-                    setState(() => notaSeleccionada = valor!),
+                onChanged: (v) => setState(() => notaSeleccionada = v!),
               ),
-
-              // Mensaje de error
               if (mensajeError != null)
                 Padding(
                   padding: const EdgeInsets.only(top: 10),
@@ -349,20 +322,18 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             ElevatedButton(
               onPressed: () {
-                // Validación: título obligatorio
                 if (controladorTitulo.text.trim().isEmpty) {
                   setState(
-                      () => mensajeError = "El título no puede estar vacío");
+                    () => mensajeError = "El título no puede estar vacío",
+                  );
                   return;
                 }
-                // Validación: director obligatorio
                 if (controladorDirector.text.trim().isEmpty) {
                   setState(
-                      () => mensajeError = "El director no puede estar vacío");
+                    () => mensajeError = "El director no puede estar vacío",
+                  );
                   return;
                 }
-
-                // Añadir película a Firestore con datos limpios
                 FirestoreService().addMovie(
                   Movie(
                     titulo: controladorTitulo.text.trim(),
@@ -380,15 +351,11 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ============================================================
-  // Diálogo para añadir juegos (con validación)
-  // ============================================================
+  // --- DIÁLOGO JUEGOS ---
   void _dialogoAnadirJuego(BuildContext context) {
     final controladorTitulo = TextEditingController();
     String plataformaSeleccionada = 'PC';
     int notaSeleccionada = 5;
-
-    // Para mostrar errores de validación
     String? mensajeError;
 
     showDialog(
@@ -403,7 +370,6 @@ class _HomeScreenState extends State<HomeScreen> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Campo de título
               TextField(
                 controller: controladorTitulo,
                 style: const TextStyle(color: Colors.white),
@@ -413,8 +379,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const SizedBox(height: 10),
-
-              // Selector de plataforma
               DropdownButtonFormField<String>(
                 value: plataformaSeleccionada,
                 dropdownColor: const Color(0xFF1A0225),
@@ -424,19 +388,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   labelStyle: TextStyle(color: Colors.white70),
                 ),
                 items: GamesScreen.plataformas
-                    .map(
-                      (plataforma) => DropdownMenuItem(
-                        value: plataforma,
-                        child: Text(plataforma),
-                      ),
-                    )
+                    .map((p) => DropdownMenuItem(value: p, child: Text(p)))
                     .toList(),
-                onChanged: (valor) =>
-                    setState(() => plataformaSeleccionada = valor!),
+                onChanged: (v) => setState(() => plataformaSeleccionada = v!),
               ),
               const SizedBox(height: 10),
-
-              // Selector de puntuación
               DropdownButtonFormField<int>(
                 value: notaSeleccionada,
                 dropdownColor: const Color(0xFF1A0225),
@@ -447,17 +403,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 items: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
                     .map(
-                      (nota) => DropdownMenuItem(
-                        value: nota,
-                        child: Text("Nota: $nota"),
-                      ),
+                      (n) =>
+                          DropdownMenuItem(value: n, child: Text("Nota: $n")),
                     )
                     .toList(),
-                onChanged: (valor) =>
-                    setState(() => notaSeleccionada = valor!),
+                onChanged: (v) => setState(() => notaSeleccionada = v!),
               ),
-
-              // Mensaje de error
               if (mensajeError != null)
                 Padding(
                   padding: const EdgeInsets.only(top: 10),
@@ -478,14 +429,12 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             ElevatedButton(
               onPressed: () {
-                // Validación: título obligatorio
                 if (controladorTitulo.text.trim().isEmpty) {
                   setState(
-                      () => mensajeError = "El título no puede estar vacío");
+                    () => mensajeError = "El título no puede estar vacío",
+                  );
                   return;
                 }
-
-                // Añadir juego a Firestore con datos limpios
                 FirestoreService().addGame(
                   Game(
                     titulo: controladorTitulo.text.trim(),
