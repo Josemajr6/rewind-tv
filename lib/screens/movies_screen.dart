@@ -1,234 +1,357 @@
 import 'package:flutter/material.dart';
-import '../models/movie_model.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../services/firestore_service.dart';
+import '../models/movie_model.dart';
 
 class MoviesScreen extends StatefulWidget {
   const MoviesScreen({super.key});
+
+  // AHORA FILTRAMOS POR GÉNERO (Igual que Series)
+  static const List<String> generos = [
+    'Todos',
+    'Sci-Fi',
+    'Terror',
+    'Comedia',
+    'Acción',
+    'Drama',
+    'Thriller',
+    'Fantasia',
+  ];
+
+  // Mantenemos la lista de plataformas para el diálogo de añadir/editar
+  static const List<String> plataformas = [
+    'Netflix',
+    'HBO',
+    'Disney+',
+    'Prime Video',
+    'Cine',
+    'Otras',
+  ];
 
   @override
   State<MoviesScreen> createState() => _MoviesScreenState();
 }
 
 class _MoviesScreenState extends State<MoviesScreen> {
-  // Nota mínima para filtrar (null = sin filtro = todas las películas)
-  int? _notaMinima = null;
-
-  // Opciones del filtro de nota mínima
-  static const List<int?> _opcionesNota = [null, 3, 5, 7, 9];
+  // Estado del filtro: GÉNERO
+  String _filtroGenero = 'Todos';
 
   @override
   Widget build(BuildContext context) {
-    const Color colorPelis = Color(0xFF00FFFF); // Cian neón
+    final Color colorTema = const Color(0xFF00FFFF);
 
-    return Scaffold(
-      backgroundColor: const Color(0xFF0D0213),
-      body: Column(
-        children: [
-          // ---- Barra de filtro por nota mínima ----
-          _barraFiltro(colorPelis),
+    return Column(
+      children: [
+        // --- 1. BARRA DE FILTROS (AHORA GÉNEROS) ---
+        Container(
+          height: 60,
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: MoviesScreen.generos.length,
+            itemBuilder: (context, index) {
+              final genero = MoviesScreen.generos[index];
+              final isSelected = _filtroGenero == genero;
 
-          // ---- Lista de películas desde Firestore ----
-          Expanded(
-            child: StreamBuilder<List<Movie>>(
-              // Usamos el método filtrado con nota mínima
-              stream:
-                  FirestoreService().getMoviesFiltradas(notaMinima: _notaMinima),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData) {
-                  return const Center(
-                    child: CircularProgressIndicator(color: colorPelis),
-                  );
-                }
-
-                final peliculas = snapshot.data!;
-
-                if (peliculas.isEmpty) {
-                  return const Center(
-                    child: Text(
-                      'NO HAY PELÍCULAS.\nPULSA + PARA AÑADIR',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.white54, fontSize: 16),
-                    ),
-                  );
-                }
-
-                // Lista de películas
-                return ListView.builder(
-                  itemCount: peliculas.length,
-                  padding: const EdgeInsets.all(15),
-                  itemBuilder: (context, index) {
-                    final pelicula = peliculas[index];
-
-                    return Card(
-                      color: Colors.white.withOpacity(0.05),
-                      margin: const EdgeInsets.only(bottom: 12),
-                      shape: RoundedRectangleBorder(
-                        side:
-                            const BorderSide(color: colorPelis, width: 0.5),
-                        borderRadius: BorderRadius.circular(10.0),
-                      ),
-                      child: ListTile(
-                        // Título de la película
-                        title: Text(
-                          pelicula.titulo.toUpperCase(),
-                          style: const TextStyle(
-                            color: colorPelis,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-
-                        // Director y puntuación
-                        subtitle: Text(
-                          "${pelicula.director} • ${pelicula.puntuacion}/10",
-                          style: const TextStyle(color: Colors.white70),
-                        ),
-
-                        // Botones de editar y eliminar
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon:
-                                  const Icon(Icons.edit, color: colorPelis),
-                              onPressed: () =>
-                                  _mostrarDialogoEditar(context, pelicula),
-                            ),
-                            IconButton(
-                              icon: const Icon(
-                                Icons.delete,
-                                color: Colors.redAccent,
-                              ),
-                              onPressed: () =>
-                                  _confirmarEliminar(context, pelicula),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Barra superior con dropdown para filtrar por nota mínima
-  Widget _barraFiltro(Color colorPelis) {
-    return Container(
-      color: const Color(0xFF1A0225),
-      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
-      child: Row(
-        children: [
-          const Text(
-            "NOTA MÍN:",
-            style: TextStyle(color: Colors.white54, fontSize: 12),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: DropdownButton<int?>(
-              value: _notaMinima,
-              isExpanded: true,
-              dropdownColor: const Color(0xFF1A0225),
-              underline: Container(height: 1, color: colorPelis),
-              items: _opcionesNota.map(
-                (nota) => DropdownMenuItem<int?>(
-                  value: nota,
-                  child: Text(
-                    nota == null ? "Todas" : "≥ $nota",
-                    style: TextStyle(
-                      color: nota == null ? Colors.white70 : colorPelis,
-                    ),
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6.0),
+                child: ChoiceChip(
+                  label: Text(genero),
+                  labelStyle: TextStyle(
+                    color: isSelected ? Colors.black : Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
                   ),
+                  selected: isSelected,
+                  selectedColor: colorTema,
+                  backgroundColor: Colors.transparent,
+                  side: BorderSide(
+                    color: isSelected ? colorTema : Colors.white24,
+                  ),
+                  onSelected: (bool selected) {
+                    setState(() {
+                      _filtroGenero = genero;
+                    });
+                  },
                 ),
-              ).toList(),
-              onChanged: (valor) {
-                setState(() => _notaMinima = valor);
-              },
-            ),
+              );
+            },
           ),
-        ],
-      ),
+        ),
+
+        // --- 2. LISTA DE PELIS ---
+        Expanded(
+          child: StreamBuilder<List<Movie>>(
+            // Filtramos por GÉNERO en el servicio
+            stream: FirestoreService().getMoviesFiltradas(
+              genero: _filtroGenero == 'Todos' ? null : _filtroGenero,
+            ),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return Center(
+                  child: CircularProgressIndicator(color: colorTema),
+                );
+              }
+              if (snapshot.hasError) {
+                return const Center(
+                  child: Text(
+                    "Error al cargar datos",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                );
+              }
+
+              final movies = snapshot.data ?? [];
+
+              // Estado Vacío
+              if (movies.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      FaIcon(
+                        FontAwesomeIcons.film,
+                        size: 50,
+                        color: Colors.white24,
+                      ),
+                      const SizedBox(height: 20),
+                      Text(
+                        "No hay pelis de $_filtroGenero",
+                        style: const TextStyle(
+                          color: Colors.white54,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              // Lista
+              return ListView.builder(
+                padding: const EdgeInsets.all(12),
+                itemCount: movies.length,
+                itemBuilder: (context, index) {
+                  final movie = movies[index];
+
+                  return Card(
+                    color: const Color(0xFF05181D),
+                    margin: const EdgeInsets.only(bottom: 15),
+                    elevation: 5,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                      side: BorderSide(color: colorTema.withOpacity(0.3)),
+                    ),
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.all(15),
+                      onTap: () => _editarPeli(context, movie),
+                      onLongPress: () => _borrarPeli(context, movie),
+
+                      title: Text(
+                        movie.titulo,
+                        style: TextStyle(
+                          color: colorTema,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.0,
+                        ),
+                      ),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 8),
+                          // Fila de etiquetas: GÉNERO y PLATAFORMA
+                          Row(
+                            children: [
+                              _Etiqueta(
+                                texto: movie.genero,
+                                color: Colors.white70,
+                              ), // Etiqueta Género
+                              const SizedBox(width: 8),
+                              _Etiqueta(
+                                texto: movie.plataforma,
+                                color: colorTema,
+                              ), // Etiqueta Plataforma
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          // Director
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.person,
+                                size: 14,
+                                color: Colors.white54,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                movie.director,
+                                style: const TextStyle(
+                                  color: Colors.white54,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          // Reseña
+                          if (movie.resena.isNotEmpty)
+                            Text(
+                              movie.resena,
+                              style: const TextStyle(
+                                color: Colors.white60,
+                                fontSize: 13,
+                                fontStyle: FontStyle.italic,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                        ],
+                      ),
+                      trailing: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const FaIcon(
+                            FontAwesomeIcons.star,
+                            color: Colors.yellow,
+                            size: 18,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            "${movie.puntuacion}",
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
-  // Diálogo para editar película (con validación)
-  void _mostrarDialogoEditar(BuildContext context, Movie pelicula) {
-    final controladorTitulo = TextEditingController(text: pelicula.titulo);
-    final controladorDirector =
-        TextEditingController(text: pelicula.director);
-    int notaSeleccionada = pelicula.puntuacion;
+  // --- DIÁLOGO EDITAR ---
+  void _editarPeli(BuildContext context, Movie movie) {
+    final tituloCtrl = TextEditingController(text: movie.titulo);
+    final directorCtrl = TextEditingController(text: movie.director);
+    final resenaCtrl = TextEditingController(text: movie.resena);
 
-    // Para mostrar errores de validación
-    String? mensajeError;
+    // Recuperamos valores o usamos defecto si no existen en la lista
+    String plataforma = MoviesScreen.plataformas.contains(movie.plataforma)
+        ? movie.plataforma
+        : MoviesScreen.plataformas[4];
+    String genero = MoviesScreen.generos.contains(movie.genero)
+        ? movie.genero
+        : MoviesScreen.generos[1]; // Evitar 'Todos' como selección
+    int puntuacion = movie.puntuacion;
 
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
-          backgroundColor: const Color(0xFF1A0225),
+          backgroundColor: const Color(0xFF001010),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+            side: const BorderSide(color: Color(0xFF00FFFF), width: 2),
+          ),
           title: const Text(
             "EDITAR PELÍCULA",
-            style: TextStyle(color: Colors.white),
+            style: TextStyle(
+              color: Color(0xFF00FFFF),
+              fontWeight: FontWeight.bold,
+            ),
           ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Campo de título
-              TextField(
-                controller: controladorTitulo,
-                style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(
-                  labelText: "Título",
-                  labelStyle: TextStyle(color: Colors.white70),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: tituloCtrl,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(labelText: "Título"),
                 ),
-              ),
-              const SizedBox(height: 10),
-
-              // Campo de director
-              TextField(
-                controller: controladorDirector,
-                style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(
-                  labelText: "Director",
-                  labelStyle: TextStyle(color: Colors.white70),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: directorCtrl,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(labelText: "Director"),
                 ),
-              ),
-              const SizedBox(height: 15),
-
-              // Selector de puntuación
-              DropdownButtonFormField<int>(
-                value: notaSeleccionada,
-                dropdownColor: const Color(0xFF1A0225),
-                style: const TextStyle(color: Color(0xFF00FFFF)),
-                decoration: const InputDecoration(
-                  labelText: "Puntuación",
-                  labelStyle: TextStyle(color: Colors.white70),
+                const SizedBox(height: 10),
+                // Selector GÉNERO
+                DropdownButtonFormField(
+                  value: genero == 'Todos'
+                      ? MoviesScreen.generos[1]
+                      : genero, // Seguridad
+                  dropdownColor: const Color(0xFF052020),
+                  items: MoviesScreen.generos
+                      .where((g) => g != 'Todos')
+                      .map(
+                        (g) => DropdownMenuItem(
+                          value: g,
+                          child: Text(
+                            g,
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (v) => setState(() => genero = v.toString()),
+                  decoration: const InputDecoration(labelText: "Género"),
                 ),
-                items: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-                    .map(
-                      (nota) => DropdownMenuItem(
-                        value: nota,
-                        child: Text("Nota: $nota"),
-                      ),
-                    )
-                    .toList(),
-                onChanged: (valor) =>
-                    setState(() => notaSeleccionada = valor!),
-              ),
-
-              // Mensaje de error si algo no cuadra
-              if (mensajeError != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 10),
-                  child: Text(
-                    mensajeError!,
-                    style: const TextStyle(color: Colors.redAccent),
-                  ),
+                const SizedBox(height: 10),
+                // Selector PLATAFORMA
+                DropdownButtonFormField(
+                  value: plataforma,
+                  dropdownColor: const Color(0xFF052020),
+                  items: MoviesScreen.plataformas
+                      .map(
+                        (p) => DropdownMenuItem(
+                          value: p,
+                          child: Text(
+                            p,
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (v) => setState(() => plataforma = v.toString()),
+                  decoration: const InputDecoration(labelText: "Plataforma"),
                 ),
-            ],
+                const SizedBox(height: 10),
+                TextField(
+                  controller: resenaCtrl,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(labelText: "Reseña"),
+                  maxLines: 2,
+                ),
+                const SizedBox(height: 10),
+                DropdownButtonFormField(
+                  value: puntuacion,
+                  dropdownColor: const Color(0xFF052020),
+                  items: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+                      .map(
+                        (n) => DropdownMenuItem(
+                          value: n,
+                          child: Text(
+                            "Nota: $n",
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (v) => setState(() => puntuacion = v as int),
+                  decoration: const InputDecoration(labelText: "Puntuación"),
+                ),
+              ],
+            ),
           ),
           actions: [
             TextButton(
@@ -239,29 +362,22 @@ class _MoviesScreenState extends State<MoviesScreen> {
               ),
             ),
             ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF00FFFF),
+                foregroundColor: Colors.black,
+              ),
               onPressed: () {
-                // Validación: título obligatorio
-                if (controladorTitulo.text.trim().isEmpty) {
-                  setState(
-                      () => mensajeError = "El título no puede estar vacío");
-                  return;
-                }
-                // Validación: director obligatorio
-                if (controladorDirector.text.trim().isEmpty) {
-                  setState(
-                      () => mensajeError = "El director no puede estar vacío");
-                  return;
-                }
-
-                // Todo correcto, actualizamos en Firestore
-                FirestoreService().updateMovie(pelicula.id!, {
-                  'titulo': controladorTitulo.text.trim(),
-                  'director': controladorDirector.text.trim(),
-                  'puntuacion': notaSeleccionada,
+                FirestoreService().updateMovie(movie.id, {
+                  'titulo': tituloCtrl.text,
+                  'director': directorCtrl.text,
+                  'plataforma': plataforma,
+                  'genero': genero, // <--- Actualizamos género
+                  'resena': resenaCtrl.text,
+                  'puntuacion': puntuacion,
                 });
                 Navigator.pop(context);
               },
-              child: const Text("GUARDAR"),
+              child: const Text("ACTUALIZAR"),
             ),
           ],
         ),
@@ -269,39 +385,54 @@ class _MoviesScreenState extends State<MoviesScreen> {
     );
   }
 
-  // Diálogo para confirmar antes de eliminar
-  void _confirmarEliminar(BuildContext context, Movie pelicula) {
+  void _borrarPeli(BuildContext context, Movie movie) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1A0225),
+      builder: (c) => AlertDialog(
+        backgroundColor: Colors.black,
         title: const Text(
-          "CONFIRMAR ELIMINACIÓN",
+          "¿Borrar peli?",
           style: TextStyle(color: Colors.white),
-        ),
-        content: Text(
-          "¿Eliminar '${pelicula.titulo}'?",
-          style: const TextStyle(color: Colors.white70),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text(
-              "CANCELAR",
-              style: TextStyle(color: Colors.white54),
-            ),
+            onPressed: () => Navigator.pop(c),
+            child: const Text("NO"),
           ),
-          ElevatedButton(
-            style:
-                ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+          TextButton(
             onPressed: () {
-              // Eliminar película de Firestore
-              FirestoreService().deleteMovie(pelicula.id!);
-              Navigator.pop(context);
+              FirestoreService().deleteMovie(movie.id);
+              Navigator.pop(c);
             },
-            child: const Text("ELIMINAR"),
+            child: const Text("SÍ", style: TextStyle(color: Colors.red)),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// Widget auxiliar para las etiquetas (reutilizado)
+class _Etiqueta extends StatelessWidget {
+  final String texto;
+  final Color color;
+  const _Etiqueta({required this.texto, required this.color});
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        border: Border.all(color: color.withOpacity(0.5)),
+        borderRadius: BorderRadius.circular(8),
+        color: color.withOpacity(0.1),
+      ),
+      child: Text(
+        texto.toUpperCase(),
+        style: TextStyle(
+          color: color,
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }

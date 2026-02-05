@@ -27,6 +27,23 @@ class _HomeScreenState extends State<HomeScreen> {
   static const Color colorJuego = Color(0xFF00FF66);
   static const Color colorPerfil = Color(0xFFFFD700);
 
+  // Listas de Plataformas para los diálogos
+  final List<String> _plataformasSeries = const [
+    'Netflix',
+    'HBO',
+    'Disney+',
+    'Prime Video',
+    'Otras',
+  ];
+  final List<String> _plataformasPelis = const [
+    'Netflix',
+    'HBO',
+    'Disney+',
+    'Prime Video',
+    'Cine',
+    'Otras',
+  ];
+
   final List<Widget> _paginas = const [
     SeriesScreen(),
     MoviesScreen(),
@@ -36,32 +53,28 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Info usuario
     final user = AuthService().currentUser;
     final String nombre =
         user?.displayName?.split(" ")[0].toUpperCase() ?? "INVITADO";
-
-    // Guardo el color actual para usarlo en la UI
     final Color colorActual = _obtenerColorActual();
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
 
-      // --- 1. APPBAR LIMPIO ---
+      // --- APPBAR ---
       appBar: AppBar(
-        leadingWidth: 150, // Espacio suficiente para que no se corte
+        leadingWidth: 150,
         leading: Align(
-          alignment: Alignment.centerLeft, // Alineado a la izquierda limpio
+          alignment: Alignment.centerLeft,
           child: Padding(
             padding: const EdgeInsets.only(left: 16.0),
             child: Text(
-              "Hola, $nombre", // Sin cápsulas, texto limpio
+              "Hola, $nombre",
               style: TextStyle(
-                color: colorActual, // El color cambia según la sección
+                color: colorActual,
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 1.0,
-                // Un pequeño brillo en el texto para que destaque del fondo negro
                 shadows: [
                   Shadow(color: colorActual.withOpacity(0.8), blurRadius: 10),
                 ],
@@ -71,52 +84,36 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         title: Image.asset('assets/logo.png', height: 32),
         centerTitle: true,
-        backgroundColor: Colors.transparent, // Se integra con el fondo
+        backgroundColor: Colors.transparent,
         elevation: 0,
       ),
 
       body: _paginas[_currentIndex],
 
-      // --- 2. BARRA INFERIOR MEJORADA ---
+      // --- BARRA INFERIOR ---
       bottomNavigationBar: Container(
-        // Decoración del contenedor de la barra
         decoration: BoxDecoration(
-          color: Colors.black, // Fondo negro puro
-          // Aquí está el truco: Una línea de borde arriba que cambia de color
-          border: Border(
-            top: BorderSide(
-              color: colorActual, // La línea es del color de la sección
-              width: 2.0, // Grosor visible
-            ),
-          ),
-          // Sombra hacia arriba (glow)
+          color: Colors.black,
+          border: Border(top: BorderSide(color: colorActual, width: 2.0)),
           boxShadow: [
             BoxShadow(
-              color: colorActual.withOpacity(
-                0.4,
-              ), // Resplandor del color actual
-              blurRadius: 15, // Difuminado
-              offset: const Offset(0, -4), // Hacia arriba
+              color: colorActual.withOpacity(0.4),
+              blurRadius: 15,
+              offset: const Offset(0, -4),
             ),
           ],
         ),
         child: BottomNavigationBar(
-          backgroundColor: Colors.transparent, // Para ver el container de abajo
+          backgroundColor: Colors.transparent,
           elevation: 0,
           type: BottomNavigationBarType.fixed,
           currentIndex: _currentIndex,
-
-          // Estilos de los items
-          selectedItemColor: colorActual, // El texto e icono activo brilla
-          unselectedItemColor: Colors.grey.shade700, // Los inactivos, apagados
-
+          selectedItemColor: colorActual,
+          unselectedItemColor: Colors.grey.shade700,
           selectedFontSize: 12,
           unselectedFontSize: 10,
-
-          // El icono seleccionado crece un poco
           selectedIconTheme: const IconThemeData(size: 26),
           unselectedIconTheme: const IconThemeData(size: 20),
-
           onTap: (index) => setState(() => _currentIndex = index),
           items: const [
             BottomNavigationBarItem(
@@ -139,7 +136,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
 
-      // Botón flotante (con brillo también)
+      // --- FAB ---
       floatingActionButton: _currentIndex == 3
           ? null
           : Container(
@@ -162,7 +159,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // --- Lógica de colores ---
   Color _obtenerColorActual() {
     if (_currentIndex == 0) return colorSerie;
     if (_currentIndex == 1) return colorPeli;
@@ -180,14 +176,15 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // ============================================================
-  // DIÁLOGOS (ESTILO NEÓN - MANTENIDOS)
+  // DIÁLOGOS DE CREACIÓN (SERIES, PELIS, JUEGOS)
   // ============================================================
 
   // --- SERIES ---
   void _dialogoAnadirSerie(BuildContext context) {
     final controladorTitulo = TextEditingController();
     final controladorResena = TextEditingController();
-    String generoSeleccionado = SeriesScreen.generos[0];
+    String generoSeleccionado = SeriesScreen.generos[1]; // Evitar 'Todos'
+    String plataformaSeleccionada = _plataformasSeries[0];
     int notaSeleccionada = 5;
     String? mensajeError;
 
@@ -195,12 +192,10 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
-          backgroundColor: const Color(
-            0xFF100010,
-          ), // Fondo muy oscuro casi negro
+          backgroundColor: const Color(0xFF100010),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(15),
-            side: BorderSide(color: colorSerie, width: 2), // Borde Neón
+            side: BorderSide(color: colorSerie, width: 2),
           ),
           shadowColor: colorSerie.withOpacity(0.6),
           elevation: 25,
@@ -226,6 +221,20 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 const SizedBox(height: 15),
+                DropdownButtonFormField<String>(
+                  value: plataformaSeleccionada,
+                  dropdownColor: const Color(0xFF200520),
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(
+                    labelText: "Plataforma",
+                    prefixIcon: Icon(Icons.live_tv, color: Colors.white54),
+                  ),
+                  items: _plataformasSeries
+                      .map((p) => DropdownMenuItem(value: p, child: Text(p)))
+                      .toList(),
+                  onChanged: (v) => setState(() => plataformaSeleccionada = v!),
+                ),
+                const SizedBox(height: 15),
                 TextField(
                   controller: controladorResena,
                   style: const TextStyle(color: Colors.white),
@@ -241,7 +250,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   dropdownColor: const Color(0xFF200520),
                   style: const TextStyle(color: Colors.white),
                   decoration: const InputDecoration(labelText: "Género"),
+                  // Filtramos 'Todos' para que no se pueda elegir al crear
                   items: SeriesScreen.generos
+                      .where((g) => g != 'Todos')
                       .map((g) => DropdownMenuItem(value: g, child: Text(g)))
                       .toList(),
                   onChanged: (v) => setState(() => generoSeleccionado = v!),
@@ -298,6 +309,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     resena: controladorResena.text.trim(),
                     genero: generoSeleccionado,
                     puntuacion: notaSeleccionada,
+                    plataforma: plataformaSeleccionada,
                   ),
                 );
                 Navigator.pop(context);
@@ -310,10 +322,14 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // --- PELIS ---
+  // --- PELIS (ACTUALIZADO CON GÉNERO) ---
   void _dialogoAnadirPeli(BuildContext context) {
     final controladorTitulo = TextEditingController();
     final controladorDirector = TextEditingController();
+    final controladorResena = TextEditingController();
+    String plataformaSeleccionada = _plataformasPelis[4]; // Default 'Cine'
+    String generoSeleccionado =
+        MoviesScreen.generos[1]; // Default 'Sci-Fi' (evitamos 'Todos')
     int notaSeleccionada = 5;
     String? mensajeError;
 
@@ -337,52 +353,93 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             textAlign: TextAlign.center,
           ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: controladorTitulo,
-                style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(
-                  labelText: "Título",
-                  prefixIcon: Icon(Icons.movie, color: Colors.white54),
-                ),
-              ),
-              const SizedBox(height: 15),
-              TextField(
-                controller: controladorDirector,
-                style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(
-                  labelText: "Director",
-                  prefixIcon: Icon(Icons.person, color: Colors.white54),
-                ),
-              ),
-              const SizedBox(height: 15),
-              DropdownButtonFormField<int>(
-                value: notaSeleccionada,
-                dropdownColor: const Color(0xFF052020),
-                style: const TextStyle(
-                  color: colorPeli,
-                  fontWeight: FontWeight.bold,
-                ),
-                decoration: const InputDecoration(labelText: "Puntuación"),
-                items: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-                    .map(
-                      (n) =>
-                          DropdownMenuItem(value: n, child: Text("Nota: $n")),
-                    )
-                    .toList(),
-                onChanged: (v) => setState(() => notaSeleccionada = v!),
-              ),
-              if (mensajeError != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 15),
-                  child: Text(
-                    mensajeError!,
-                    style: const TextStyle(color: Colors.redAccent),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: controladorTitulo,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(
+                    labelText: "Título",
+                    prefixIcon: Icon(Icons.movie, color: Colors.white54),
                   ),
                 ),
-            ],
+                const SizedBox(height: 15),
+                TextField(
+                  controller: controladorDirector,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(
+                    labelText: "Director",
+                    prefixIcon: Icon(Icons.person, color: Colors.white54),
+                  ),
+                ),
+                const SizedBox(height: 15),
+                // NUEVO: Selector de GÉNERO
+                DropdownButtonFormField<String>(
+                  value: generoSeleccionado,
+                  dropdownColor: const Color(0xFF052020),
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(labelText: "Género"),
+                  // Importante: Filtramos 'Todos'
+                  items: MoviesScreen.generos
+                      .where((g) => g != 'Todos')
+                      .map((g) => DropdownMenuItem(value: g, child: Text(g)))
+                      .toList(),
+                  onChanged: (v) => setState(() => generoSeleccionado = v!),
+                ),
+                const SizedBox(height: 15),
+                // Selector de PLATAFORMA
+                DropdownButtonFormField<String>(
+                  value: plataformaSeleccionada,
+                  dropdownColor: const Color(0xFF052020),
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(
+                    labelText: "Plataforma",
+                    prefixIcon: Icon(Icons.theaters, color: Colors.white54),
+                  ),
+                  items: _plataformasPelis
+                      .map((p) => DropdownMenuItem(value: p, child: Text(p)))
+                      .toList(),
+                  onChanged: (v) => setState(() => plataformaSeleccionada = v!),
+                ),
+                const SizedBox(height: 15),
+                TextField(
+                  controller: controladorResena,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(
+                    labelText: "Reseña",
+                    prefixIcon: Icon(Icons.edit, color: Colors.white54),
+                  ),
+                  maxLines: 2,
+                ),
+                const SizedBox(height: 15),
+                DropdownButtonFormField<int>(
+                  value: notaSeleccionada,
+                  dropdownColor: const Color(0xFF052020),
+                  style: const TextStyle(
+                    color: colorPeli,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  decoration: const InputDecoration(labelText: "Puntuación"),
+                  items: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+                      .map(
+                        (n) =>
+                            DropdownMenuItem(value: n, child: Text("Nota: $n")),
+                      )
+                      .toList(),
+                  onChanged: (v) => setState(() => notaSeleccionada = v!),
+                ),
+                if (mensajeError != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 15),
+                    child: Text(
+                      mensajeError!,
+                      style: const TextStyle(color: Colors.redAccent),
+                    ),
+                  ),
+              ],
+            ),
           ),
           actions: [
             TextButton(
@@ -411,6 +468,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     titulo: controladorTitulo.text.trim(),
                     director: controladorDirector.text.trim(),
                     puntuacion: notaSeleccionada,
+                    plataforma: plataformaSeleccionada,
+                    genero: generoSeleccionado, // <--- GUARDAMOS GÉNERO
+                    resena: controladorResena.text.trim(),
                   ),
                 );
                 Navigator.pop(context);
@@ -426,6 +486,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // --- JUEGOS ---
   void _dialogoAnadirJuego(BuildContext context) {
     final controladorTitulo = TextEditingController();
+    final controladorResena = TextEditingController();
     String plataformaSeleccionada = 'PC';
     int notaSeleccionada = 5;
     String? mensajeError;
@@ -450,54 +511,73 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             textAlign: TextAlign.center,
           ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: controladorTitulo,
-                style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(
-                  labelText: "Título",
-                  prefixIcon: Icon(Icons.gamepad, color: Colors.white54),
-                ),
-              ),
-              const SizedBox(height: 15),
-              DropdownButtonFormField<String>(
-                value: plataformaSeleccionada,
-                dropdownColor: const Color(0xFF052010),
-                style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(labelText: "Plataforma"),
-                items: GamesScreen.plataformas
-                    .map((p) => DropdownMenuItem(value: p, child: Text(p)))
-                    .toList(),
-                onChanged: (v) => setState(() => plataformaSeleccionada = v!),
-              ),
-              const SizedBox(height: 15),
-              DropdownButtonFormField<int>(
-                value: notaSeleccionada,
-                dropdownColor: const Color(0xFF052010),
-                style: const TextStyle(
-                  color: colorJuego,
-                  fontWeight: FontWeight.bold,
-                ),
-                decoration: const InputDecoration(labelText: "Puntuación"),
-                items: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-                    .map(
-                      (n) =>
-                          DropdownMenuItem(value: n, child: Text("Nota: $n")),
-                    )
-                    .toList(),
-                onChanged: (v) => setState(() => notaSeleccionada = v!),
-              ),
-              if (mensajeError != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 15),
-                  child: Text(
-                    mensajeError!,
-                    style: const TextStyle(color: Colors.redAccent),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: controladorTitulo,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(
+                    labelText: "Título",
+                    prefixIcon: Icon(Icons.gamepad, color: Colors.white54),
                   ),
                 ),
-            ],
+                const SizedBox(height: 15),
+                DropdownButtonFormField<String>(
+                  value: plataformaSeleccionada,
+                  dropdownColor: const Color(0xFF052010),
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(
+                    labelText: "Plataforma",
+                    prefixIcon: Icon(Icons.computer, color: Colors.white54),
+                  ),
+                  items: GamesScreen.plataformas
+                      .where((p) => p != 'Todas')
+                      .map((p) => DropdownMenuItem(value: p, child: Text(p)))
+                      .toList(),
+                  onChanged: (v) => setState(() => plataformaSeleccionada = v!),
+                ),
+                const SizedBox(height: 15),
+                TextField(
+                  controller: controladorResena,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(
+                    labelText: "Reseña",
+                    prefixIcon: Icon(Icons.edit, color: Colors.white54),
+                  ),
+                  maxLines: 2,
+                ),
+                const SizedBox(height: 15),
+                DropdownButtonFormField<int>(
+                  value: notaSeleccionada,
+                  dropdownColor: const Color(0xFF052010),
+                  style: const TextStyle(
+                    color: colorJuego,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  decoration: const InputDecoration(
+                    labelText: "Puntuación",
+                    prefixIcon: Icon(Icons.star, color: Colors.white54),
+                  ),
+                  items: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+                      .map(
+                        (n) =>
+                            DropdownMenuItem(value: n, child: Text("Nota: $n")),
+                      )
+                      .toList(),
+                  onChanged: (v) => setState(() => notaSeleccionada = v!),
+                ),
+                if (mensajeError != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 15),
+                    child: Text(
+                      mensajeError!,
+                      style: const TextStyle(color: Colors.redAccent),
+                    ),
+                  ),
+              ],
+            ),
           ),
           actions: [
             TextButton(
@@ -523,6 +603,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     plataforma: plataformaSeleccionada,
                     estado: "Jugando",
                     puntuacion: notaSeleccionada,
+                    resena: controladorResena.text.trim(),
                   ),
                 );
                 Navigator.pop(context);

@@ -1,278 +1,297 @@
 import 'package:flutter/material.dart';
-import '../models/serie_model.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../services/firestore_service.dart';
+import '../models/serie_model.dart';
 
 class SeriesScreen extends StatefulWidget {
   const SeriesScreen({super.key});
 
+  static const List<String> generos = [
+    'Todos',
+    'Sci-Fi',
+    'Terror',
+    'Comedia',
+    'Acción',
+    'Drama',
+    'Anime',
+    'Fantasia',
+  ];
+  // Definimos aquí las plataformas para usarlas al editar
+  static const List<String> plataformas = [
+    'Netflix',
+    'HBO',
+    'Disney+',
+    'Prime Video',
+    'Otras',
+  ];
+
   @override
   State<SeriesScreen> createState() => _SeriesScreenState();
-
-  // Lista de géneros disponibles (static para que home_screen pueda usarla)
-  static const List<String> generos = [
-    'Acción',
-    'Comedia',
-    'Drama',
-    'Terror',
-    'Ciencia Ficción',
-    'Suspense',
-    'Aventura',
-    'Documental',
-  ];
 }
 
 class _SeriesScreenState extends State<SeriesScreen> {
-  // El genero que tiene el filtro activo (null = sin filtro = todas)
-  String? _generoFiltro = null;
+  String _filtroGenero = 'Todos';
 
   @override
   Widget build(BuildContext context) {
-    const Color colorSerie = Color(0xFFFF00FF); // Magenta neón
+    final Color colorTema = const Color(0xFFFF00FF);
 
-    return Scaffold(
-      backgroundColor: const Color(0xFF0D0213),
-      body: Column(
-        children: [
-          // ---- Barra de filtro por genero ----
-          _barraFiltro(colorSerie),
-
-          // ---- Lista de series desde Firestore ----
-          Expanded(
-            child: StreamBuilder<List<Serie>>(
-              // Usamos el método filtrado: si _generoFiltro es null, trae todas
-              stream:
-                  FirestoreService().getSeriesFiltradas(genero: _generoFiltro),
-              builder: (context, snapshot) {
-                // Cargando datos...
-                if (!snapshot.hasData) {
-                  return const Center(
-                    child: CircularProgressIndicator(color: colorSerie),
-                  );
-                }
-
-                final series = snapshot.data!;
-
-                // Si la lista está vacía, aviso al usuario
-                if (series.isEmpty) {
-                  return const Center(
-                    child: Text(
-                      'NO HAY SERIES.\nPULSA + PARA AÑADIR',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.white54, fontSize: 16),
-                    ),
-                  );
-                }
-
-                // Lista de series
-                return ListView.builder(
-                  itemCount: series.length,
-                  padding: const EdgeInsets.all(15),
-                  itemBuilder: (context, index) {
-                    final serie = series[index];
-
-                    return Card(
-                      color: Colors.white.withOpacity(0.05),
-                      margin: const EdgeInsets.only(bottom: 12),
-                      shape: RoundedRectangleBorder(
-                        side:
-                            const BorderSide(color: colorSerie, width: 0.5),
-                        borderRadius: BorderRadius.circular(10.0),
-                      ),
-                      child: ListTile(
-                        // Título de la serie
-                        title: Text(
-                          serie.titulo.toUpperCase(),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-
-                        // Género y puntuación
-                        subtitle: Text(
-                          "${serie.genero} • ${serie.puntuacion}/10",
-                          style: const TextStyle(color: Colors.white70),
-                        ),
-
-                        // Botones de editar y eliminar
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.edit, color: colorSerie),
-                              onPressed: () =>
-                                  _mostrarDialogoEditar(context, serie),
-                            ),
-                            IconButton(
-                              icon: const Icon(
-                                Icons.delete,
-                                color: Colors.redAccent,
-                              ),
-                              onPressed: () =>
-                                  _confirmarEliminar(context, serie),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
+    return Column(
+      children: [
+        // --- BARRA DE FILTROS ---
+        Container(
+          height: 60,
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: SeriesScreen.generos.length,
+            itemBuilder: (context, index) {
+              final genero = SeriesScreen.generos[index];
+              final isSelected = _filtroGenero == genero;
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6.0),
+                child: ChoiceChip(
+                  label: Text(genero),
+                  labelStyle: TextStyle(
+                    color: isSelected ? Colors.black : Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                  selected: isSelected,
+                  selectedColor: colorTema,
+                  backgroundColor: Colors.transparent,
+                  side: BorderSide(
+                    color: isSelected ? colorTema : Colors.white24,
+                  ),
+                  onSelected: (bool selected) {
+                    setState(() => _filtroGenero = genero);
                   },
+                ),
+              );
+            },
+          ),
+        ),
+
+        // --- LISTA ---
+        Expanded(
+          child: StreamBuilder<List<Serie>>(
+            stream: FirestoreService().getSeriesFiltradas(
+              genero: _filtroGenero == 'Todos' ? null : _filtroGenero,
+            ),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return Center(
+                  child: CircularProgressIndicator(color: colorTema),
                 );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+              }
+              final series = snapshot.data ?? [];
 
-  // Barra superior con dropdown para filtrar por genero
-  Widget _barraFiltro(Color colorSerie) {
-    return Container(
-      color: const Color(0xFF1A0225),
-      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
-      child: Row(
-        children: [
-          const Text(
-            "FILTRO:",
-            style: TextStyle(color: Colors.white54, fontSize: 12),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: DropdownButton<String?>(
-              value: _generoFiltro,
-              isExpanded: true,
-              dropdownColor: const Color(0xFF1A0225),
-              underline: Container(height: 1, color: colorSerie),
-              // Opción "Todos" para limpiar el filtro
-              items: [
-                const DropdownMenuItem<String?>(
-                  value: null,
-                  child: Text(
-                    "Todos los géneros",
-                    style: TextStyle(color: Colors.white70),
+              if (series.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      FaIcon(
+                        FontAwesomeIcons.ghost,
+                        size: 50,
+                        color: Colors.white24,
+                      ),
+                      const SizedBox(height: 20),
+                      const Text(
+                        "No hay series aquí",
+                        style: TextStyle(color: Colors.white54),
+                      ),
+                    ],
                   ),
-                ),
-                ...SeriesScreen.generos.map(
-                  (genero) => DropdownMenuItem<String>(
-                    value: genero,
-                    child: Text(
-                      genero,
-                      style: TextStyle(color: colorSerie),
+                );
+              }
+
+              return ListView.builder(
+                padding: const EdgeInsets.all(12),
+                itemCount: series.length,
+                itemBuilder: (context, index) {
+                  final serie = series[index];
+
+                  return Card(
+                    color: const Color(0xFF15051D),
+                    margin: const EdgeInsets.only(bottom: 15),
+                    elevation: 5,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                      side: BorderSide(color: colorTema.withOpacity(0.3)),
                     ),
-                  ),
-                ),
-              ],
-              onChanged: (valor) {
-                setState(() => _generoFiltro = valor);
-              },
-            ),
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.all(15),
+                      // --- EDITAR AL TOCAR ---
+                      onTap: () => _editarSerie(context, serie),
+                      // --- BORRAR AL MANTENER ---
+                      onLongPress: () => _borrarSerie(context, serie),
+
+                      title: Text(
+                        serie.titulo,
+                        style: TextStyle(
+                          color: colorTema,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              _Etiqueta(
+                                texto: serie.genero,
+                                color: Colors.white70,
+                              ),
+                              const SizedBox(width: 8),
+                              _Etiqueta(
+                                texto: serie.plataforma,
+                                color: Colors.cyanAccent,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            serie.resena,
+                            style: const TextStyle(
+                              color: Colors.white60,
+                              fontSize: 13,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                      trailing: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const FaIcon(
+                            FontAwesomeIcons.star,
+                            color: Colors.yellow,
+                            size: 18,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            "${serie.puntuacion}",
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              );
+            },
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
-  // Diálogo para editar la serie (con validación)
-  void _mostrarDialogoEditar(BuildContext context, Serie serie) {
-    final controladorTitulo = TextEditingController(text: serie.titulo);
-    final controladorResena = TextEditingController(text: serie.resena);
-    String generoSeleccionado =
-        SeriesScreen.generos.contains(serie.genero)
-            ? serie.genero
-            : SeriesScreen.generos[0];
-    int notaSeleccionada = serie.puntuacion;
-
-    // Variable para mostrar el error de validación dentro del diálogo
-    String? mensajeError;
+  // DIÁLOGO DE EDICIÓN
+  void _editarSerie(BuildContext context, Serie serie) {
+    final tituloCtrl = TextEditingController(text: serie.titulo);
+    final resenaCtrl = TextEditingController(text: serie.resena);
+    String genero = SeriesScreen.generos.contains(serie.genero)
+        ? serie.genero
+        : SeriesScreen.generos[1];
+    String plataforma = SeriesScreen.plataformas.contains(serie.plataforma)
+        ? serie.plataforma
+        : SeriesScreen.plataformas[0];
+    int puntuacion = serie.puntuacion;
 
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
-          backgroundColor: const Color(0xFF1A0225),
+          backgroundColor: const Color(0xFF100010),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+            side: const BorderSide(color: Color(0xFFFF00FF), width: 2),
+          ),
           title: const Text(
             "EDITAR SERIE",
-            style: TextStyle(color: Colors.white),
+            style: TextStyle(
+              color: Color(0xFFFF00FF),
+              fontWeight: FontWeight.bold,
+            ),
           ),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Campo de título
                 TextField(
-                  controller: controladorTitulo,
+                  controller: tituloCtrl,
                   style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(
-                    labelText: "Título",
-                    labelStyle: TextStyle(color: Colors.white70),
-                  ),
+                  decoration: const InputDecoration(labelText: "Título"),
                 ),
                 const SizedBox(height: 10),
-
-                // Campo de reseña
+                DropdownButtonFormField(
+                  value: plataforma,
+                  dropdownColor: const Color(0xFF200520),
+                  items: SeriesScreen.plataformas
+                      .map(
+                        (p) => DropdownMenuItem(
+                          value: p,
+                          child: Text(
+                            p,
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (v) => setState(() => plataforma = v.toString()),
+                  decoration: const InputDecoration(labelText: "Plataforma"),
+                ),
+                const SizedBox(height: 10),
                 TextField(
-                  controller: controladorResena,
+                  controller: resenaCtrl,
                   style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(
-                    labelText: "Reseña",
-                    labelStyle: TextStyle(color: Colors.white70),
-                  ),
+                  decoration: const InputDecoration(labelText: "Reseña"),
                   maxLines: 2,
                 ),
-                const SizedBox(height: 15),
-
-                // Selector de género
-                DropdownButtonFormField<String>(
-                  value: generoSeleccionado,
-                  dropdownColor: const Color(0xFF1A0225),
-                  style: const TextStyle(color: Color(0xFFFF00FF)),
-                  decoration: const InputDecoration(
-                    labelText: "Género",
-                    labelStyle: TextStyle(color: Colors.white70),
-                  ),
+                const SizedBox(height: 10),
+                DropdownButtonFormField(
+                  value: genero,
+                  dropdownColor: const Color(0xFF200520),
                   items: SeriesScreen.generos
+                      .where((g) => g != 'Todos')
                       .map(
-                        (genero) => DropdownMenuItem(
-                          value: genero,
-                          child: Text(genero),
+                        (g) => DropdownMenuItem(
+                          value: g,
+                          child: Text(
+                            g,
+                            style: const TextStyle(color: Colors.white),
+                          ),
                         ),
                       )
                       .toList(),
-                  onChanged: (valor) =>
-                      setState(() => generoSeleccionado = valor!),
+                  onChanged: (v) => setState(() => genero = v.toString()),
+                  decoration: const InputDecoration(labelText: "Género"),
                 ),
-                const SizedBox(height: 15),
-
-                // Selector de puntuación
-                DropdownButtonFormField<int>(
-                  value: notaSeleccionada,
-                  dropdownColor: const Color(0xFF1A0225),
-                  style: const TextStyle(color: Color(0xFFFF00FF)),
-                  decoration: const InputDecoration(
-                    labelText: "Puntuación",
-                    labelStyle: TextStyle(color: Colors.white70),
-                  ),
+                const SizedBox(height: 10),
+                DropdownButtonFormField(
+                  value: puntuacion,
+                  dropdownColor: const Color(0xFF200520),
                   items: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
                       .map(
-                        (nota) => DropdownMenuItem(
-                          value: nota,
-                          child: Text("Nota: $nota"),
+                        (n) => DropdownMenuItem(
+                          value: n,
+                          child: Text(
+                            "Nota: $n",
+                            style: const TextStyle(color: Colors.white),
+                          ),
                         ),
                       )
                       .toList(),
-                  onChanged: (valor) =>
-                      setState(() => notaSeleccionada = valor!),
+                  onChanged: (v) => setState(() => puntuacion = v as int),
+                  decoration: const InputDecoration(labelText: "Puntuación"),
                 ),
-
-                // Mensaje de error si la validación falla
-                if (mensajeError != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 10),
-                    child: Text(
-                      mensajeError!,
-                      style: const TextStyle(color: Colors.redAccent),
-                    ),
-                  ),
               ],
             ),
           ),
@@ -285,23 +304,23 @@ class _SeriesScreenState extends State<SeriesScreen> {
               ),
             ),
             ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFF00FF),
+              ),
               onPressed: () {
-                // Validación: el título no puede estar vacío ni ser solo espacios
-                if (controladorTitulo.text.trim().isEmpty) {
-                  setState(() => mensajeError = "El título no puede estar vacío");
-                  return;
-                }
-
-                // Actualizar serie en Firestore con datos validados
-                FirestoreService().updateSerie(serie.id!, {
-                  'titulo': controladorTitulo.text.trim(),
-                  'resena': controladorResena.text.trim(),
-                  'genero': generoSeleccionado,
-                  'puntuacion': notaSeleccionada,
+                FirestoreService().updateSerie(serie.id, {
+                  'titulo': tituloCtrl.text,
+                  'resena': resenaCtrl.text,
+                  'genero': genero,
+                  'plataforma': plataforma,
+                  'puntuacion': puntuacion,
                 });
                 Navigator.pop(context);
               },
-              child: const Text("GUARDAR"),
+              child: const Text(
+                "ACTUALIZAR",
+                style: TextStyle(color: Colors.black),
+              ),
             ),
           ],
         ),
@@ -309,39 +328,56 @@ class _SeriesScreenState extends State<SeriesScreen> {
     );
   }
 
-  // Diálogo para confirmar antes de eliminar
-  void _confirmarEliminar(BuildContext context, Serie serie) {
+  void _borrarSerie(BuildContext context, Serie serie) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1A0225),
+      builder: (c) => AlertDialog(
+        backgroundColor: Colors.black,
         title: const Text(
-          "CONFIRMAR ELIMINACIÓN",
+          "¿Borrar serie?",
           style: TextStyle(color: Colors.white),
-        ),
-        content: Text(
-          "¿Eliminar '${serie.titulo}'?",
-          style: const TextStyle(color: Colors.white70),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(c),
+            child: const Text("NO"),
+          ),
+          TextButton(
+            onPressed: () {
+              FirestoreService().deleteSerie(serie.id);
+              Navigator.pop(c);
+            },
             child: const Text(
-              "CANCELAR",
-              style: TextStyle(color: Colors.white54),
+              "SÍ, BORRAR",
+              style: TextStyle(color: Colors.red),
             ),
           ),
-          ElevatedButton(
-            style:
-                ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
-            onPressed: () {
-              // Eliminar serie de Firestore
-              FirestoreService().deleteSerie(serie.id!);
-              Navigator.pop(context);
-            },
-            child: const Text("ELIMINAR"),
-          ),
         ],
+      ),
+    );
+  }
+}
+
+class _Etiqueta extends StatelessWidget {
+  final String texto;
+  final Color color;
+  const _Etiqueta({required this.texto, required this.color});
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        border: Border.all(color: color.withOpacity(0.5)),
+        borderRadius: BorderRadius.circular(8),
+        color: color.withOpacity(0.1),
+      ),
+      child: Text(
+        texto.toUpperCase(),
+        style: TextStyle(
+          color: color,
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }

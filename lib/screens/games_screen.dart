@@ -1,260 +1,294 @@
 import 'package:flutter/material.dart';
-import '../models/game_model.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../services/firestore_service.dart';
+import '../models/game_model.dart';
 
 class GamesScreen extends StatefulWidget {
   const GamesScreen({super.key});
 
+  static const List<String> plataformas = [
+    'Todas',
+    'PC',
+    'PS5',
+    'PS4',
+    'Xbox',
+    'Switch',
+    'Otras',
+  ];
+
   @override
   State<GamesScreen> createState() => _GamesScreenState();
-
-  // Plataformas disponibles (static para que home_screen pueda usarlas)
-  static const List<String> plataformas = ['PC', 'PS5', 'Switch', 'Xbox'];
 }
 
 class _GamesScreenState extends State<GamesScreen> {
-  // Plataforma que tiene el filtro activo (null = todas)
-  String? _plataformaFiltro = null;
+  String _filtroPlataforma = 'Todas';
 
   @override
   Widget build(BuildContext context) {
-    const Color colorJuegos = Color(0xFF00FF66); // Verde neón
+    final Color colorTema = const Color(0xFF00FF66);
 
-    return Scaffold(
-      backgroundColor: const Color(0xFF0D0213),
-      body: Column(
-        children: [
-          // ---- Barra de filtro por plataforma ----
-          _barraFiltro(colorJuegos),
+    return Column(
+      children: [
+        // FILTROS
+        Container(
+          height: 60,
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: GamesScreen.plataformas.length,
+            itemBuilder: (context, index) {
+              final filtro = GamesScreen.plataformas[index];
+              final isSelected = _filtroPlataforma == filtro;
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6.0),
+                child: ChoiceChip(
+                  label: Text(filtro),
+                  labelStyle: TextStyle(
+                    color: isSelected ? Colors.black : Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                  selected: isSelected,
+                  selectedColor: colorTema,
+                  backgroundColor: Colors.transparent,
+                  side: BorderSide(
+                    color: isSelected ? colorTema : Colors.white24,
+                  ),
+                  onSelected: (bool selected) =>
+                      setState(() => _filtroPlataforma = filtro),
+                ),
+              );
+            },
+          ),
+        ),
 
-          // ---- Lista de juegos desde Firestore ----
-          Expanded(
-            child: StreamBuilder<List<Game>>(
-              // Usamos el método filtrado por plataforma
-              stream: FirestoreService()
-                  .getGamesFiltrados(plataforma: _plataformaFiltro),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData) {
-                  return const Center(
-                    child: CircularProgressIndicator(color: colorJuegos),
-                  );
-                }
+        // LISTA
+        Expanded(
+          child: StreamBuilder<List<Game>>(
+            stream: FirestoreService().getGamesFiltrados(
+              plataforma: _filtroPlataforma == 'Todas'
+                  ? null
+                  : _filtroPlataforma,
+            ),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting)
+                return Center(
+                  child: CircularProgressIndicator(color: colorTema),
+                );
+              final juegos = snapshot.data ?? [];
 
-                final juegos = snapshot.data!;
-
-                if (juegos.isEmpty) {
-                  return const Center(
-                    child: Text(
-                      'NO HAY JUEGOS.\nPULSA + PARA AÑADIR',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.white54, fontSize: 16),
-                    ),
-                  );
-                }
-
-                // Lista de juegos
-                return ListView.builder(
-                  itemCount: juegos.length,
-                  padding: const EdgeInsets.all(15),
-                  itemBuilder: (context, index) {
-                    final juego = juegos[index];
-
-                    return Card(
-                      color: Colors.white.withOpacity(0.05),
-                      margin: const EdgeInsets.only(bottom: 12),
-                      shape: RoundedRectangleBorder(
-                        side: const BorderSide(
-                          color: colorJuegos,
-                          width: 0.5,
-                        ),
-                        borderRadius: BorderRadius.circular(10.0),
+              if (juegos.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      FaIcon(
+                        FontAwesomeIcons.gamepad,
+                        size: 50,
+                        color: Colors.white24,
                       ),
-                      child: ListTile(
-                        // Icono de juego
-                        leading:
-                            const Icon(Icons.gamepad, color: colorJuegos),
+                      const SizedBox(height: 20),
+                      const Text(
+                        "No hay juegos aquí",
+                        style: TextStyle(color: Colors.white54),
+                      ),
+                    ],
+                  ),
+                );
+              }
 
-                        // Título del juego
-                        title: Text(
-                          juego.titulo.toUpperCase(),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
+              return ListView.builder(
+                padding: const EdgeInsets.all(12),
+                itemCount: juegos.length,
+                itemBuilder: (context, index) {
+                  final juego = juegos[index];
+
+                  return Card(
+                    color: const Color(0xFF051D0D),
+                    margin: const EdgeInsets.only(bottom: 15),
+                    elevation: 5,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                      side: BorderSide(color: colorTema.withOpacity(0.3)),
+                    ),
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.all(15),
+                      onTap: () => _editarJuego(context, juego),
+                      onLongPress: () => _borrarJuego(context, juego),
+                      title: Text(
+                        juego.titulo,
+                        style: TextStyle(
+                          color: colorTema,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: colorTema.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(
+                                    color: colorTema.withOpacity(0.5),
+                                  ),
+                                ),
+                                child: Text(
+                                  juego.plataforma.toUpperCase(),
+                                  style: TextStyle(
+                                    color: colorTema,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              const Icon(
+                                Icons.sports_esports,
+                                size: 14,
+                                color: Colors.white70,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                juego.estado,
+                                style: const TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-
-                        // Plataforma y puntuación
-                        subtitle: Text(
-                          "${juego.plataforma} • ${juego.puntuacion}/10",
-                          style: const TextStyle(color: Colors.white70),
-                        ),
-
-                        // Botones de editar y eliminar
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: const Icon(
-                                Icons.edit,
-                                color: colorJuegos,
+                          if (juego.resena.isNotEmpty) ...[
+                            const SizedBox(height: 10),
+                            Text(
+                              juego.resena,
+                              style: const TextStyle(
+                                color: Colors.white60,
+                                fontSize: 13,
+                                fontStyle: FontStyle.italic,
                               ),
-                              onPressed: () =>
-                                  _mostrarDialogoEditar(context, juego),
-                            ),
-                            IconButton(
-                              icon: const Icon(
-                                Icons.delete,
-                                color: Colors.redAccent,
-                              ),
-                              onPressed: () =>
-                                  _confirmarEliminar(context, juego),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ],
-                        ),
+                        ],
                       ),
-                    );
-                  },
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Barra superior con dropdown para filtrar por plataforma
-  Widget _barraFiltro(Color colorJuegos) {
-    return Container(
-      color: const Color(0xFF1A0225),
-      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
-      child: Row(
-        children: [
-          const Text(
-            "PLATAFORMA:",
-            style: TextStyle(color: Colors.white54, fontSize: 12),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: DropdownButton<String?>(
-              value: _plataformaFiltro,
-              isExpanded: true,
-              dropdownColor: const Color(0xFF1A0225),
-              underline: Container(height: 1, color: colorJuegos),
-              items: [
-                // Opción para quitar el filtro
-                const DropdownMenuItem<String?>(
-                  value: null,
-                  child: Text(
-                    "Todas las plataformas",
-                    style: TextStyle(color: Colors.white70),
-                  ),
-                ),
-                ...GamesScreen.plataformas.map(
-                  (plataforma) => DropdownMenuItem<String>(
-                    value: plataforma,
-                    child: Text(
-                      plataforma,
-                      style: TextStyle(color: colorJuegos),
+                      trailing: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const FaIcon(
+                            FontAwesomeIcons.star,
+                            color: Colors.yellow,
+                            size: 18,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            "${juego.puntuacion}",
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ),
-              ],
-              onChanged: (valor) {
-                setState(() => _plataformaFiltro = valor);
-              },
-            ),
+                  );
+                },
+              );
+            },
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
-  // Diálogo para editar juego (con validación)
-  void _mostrarDialogoEditar(BuildContext context, Game juego) {
-    final controladorTitulo = TextEditingController(text: juego.titulo);
-    String plataformaSeleccionada = juego.plataforma;
-    int notaSeleccionada = juego.puntuacion;
-
-    // Para mostrar errores de validación
-    String? mensajeError;
+  void _editarJuego(BuildContext context, Game juego) {
+    final tituloCtrl = TextEditingController(text: juego.titulo);
+    final resenaCtrl = TextEditingController(text: juego.resena);
+    String plataforma = GamesScreen.plataformas.contains(juego.plataforma)
+        ? juego.plataforma
+        : GamesScreen.plataformas[1];
+    int puntuacion = juego.puntuacion;
 
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
-          backgroundColor: const Color(0xFF1A0225),
+          backgroundColor: const Color(0xFF001005),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+            side: const BorderSide(color: Color(0xFF00FF66), width: 2),
+          ),
           title: const Text(
             "EDITAR JUEGO",
-            style: TextStyle(color: Colors.white),
+            style: TextStyle(
+              color: Color(0xFF00FF66),
+              fontWeight: FontWeight.bold,
+            ),
           ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Campo de título
-              TextField(
-                controller: controladorTitulo,
-                style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(
-                  labelText: "Título",
-                  labelStyle: TextStyle(color: Colors.white70),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: tituloCtrl,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(labelText: "Título"),
                 ),
-              ),
-              const SizedBox(height: 15),
-
-              // Selector de plataforma
-              DropdownButtonFormField<String>(
-                value: plataformaSeleccionada,
-                dropdownColor: const Color(0xFF1A0225),
-                style: const TextStyle(color: Color(0xFF00FF66)),
-                decoration: const InputDecoration(
-                  labelText: "Plataforma",
-                  labelStyle: TextStyle(color: Colors.white70),
+                const SizedBox(height: 10),
+                DropdownButtonFormField(
+                  value: plataforma,
+                  dropdownColor: const Color(0xFF052010),
+                  items: GamesScreen.plataformas
+                      .where((p) => p != 'Todas')
+                      .map(
+                        (p) => DropdownMenuItem(
+                          value: p,
+                          child: Text(
+                            p,
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (v) => setState(() => plataforma = v.toString()),
+                  decoration: const InputDecoration(labelText: "Plataforma"),
                 ),
-                items: GamesScreen.plataformas
-                    .map(
-                      (plataforma) => DropdownMenuItem(
-                        value: plataforma,
-                        child: Text(plataforma),
-                      ),
-                    )
-                    .toList(),
-                onChanged: (valor) =>
-                    setState(() => plataformaSeleccionada = valor!),
-              ),
-              const SizedBox(height: 15),
-
-              // Selector de puntuación
-              DropdownButtonFormField<int>(
-                value: notaSeleccionada,
-                dropdownColor: const Color(0xFF1A0225),
-                style: const TextStyle(color: Color(0xFF00FF66)),
-                decoration: const InputDecoration(
-                  labelText: "Puntuación",
-                  labelStyle: TextStyle(color: Colors.white70),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: resenaCtrl,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(labelText: "Reseña"),
+                  maxLines: 2,
                 ),
-                items: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-                    .map(
-                      (nota) => DropdownMenuItem(
-                        value: nota,
-                        child: Text("Nota: $nota"),
-                      ),
-                    )
-                    .toList(),
-                onChanged: (valor) =>
-                    setState(() => notaSeleccionada = valor!),
-              ),
-
-              // Mensaje de error si la validación falla
-              if (mensajeError != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 10),
-                  child: Text(
-                    mensajeError!,
-                    style: const TextStyle(color: Colors.redAccent),
-                  ),
+                const SizedBox(height: 10),
+                DropdownButtonFormField(
+                  value: puntuacion,
+                  dropdownColor: const Color(0xFF052010),
+                  items: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+                      .map(
+                        (n) => DropdownMenuItem(
+                          value: n,
+                          child: Text(
+                            "Nota: $n",
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (v) => setState(() => puntuacion = v as int),
+                  decoration: const InputDecoration(labelText: "Puntuación"),
                 ),
-            ],
+              ],
+            ),
           ),
           actions: [
             TextButton(
@@ -265,23 +299,20 @@ class _GamesScreenState extends State<GamesScreen> {
               ),
             ),
             ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF00FF66),
+                foregroundColor: Colors.black,
+              ),
               onPressed: () {
-                // Validación: título obligatorio
-                if (controladorTitulo.text.trim().isEmpty) {
-                  setState(
-                      () => mensajeError = "El título no puede estar vacío");
-                  return;
-                }
-
-                // Actualizar juego en Firestore con datos validados
-                FirestoreService().updateGame(juego.id!, {
-                  'titulo': controladorTitulo.text.trim(),
-                  'plataforma': plataformaSeleccionada,
-                  'puntuacion': notaSeleccionada,
+                FirestoreService().updateGame(juego.id, {
+                  'titulo': tituloCtrl.text,
+                  'plataforma': plataforma,
+                  'resena': resenaCtrl.text,
+                  'puntuacion': puntuacion,
                 });
                 Navigator.pop(context);
               },
-              child: const Text("GUARDAR"),
+              child: const Text("ACTUALIZAR"),
             ),
           ],
         ),
@@ -289,37 +320,26 @@ class _GamesScreenState extends State<GamesScreen> {
     );
   }
 
-  // Diálogo para confirmar antes de eliminar
-  void _confirmarEliminar(BuildContext context, Game juego) {
+  void _borrarJuego(BuildContext context, Game juego) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1A0225),
+      builder: (c) => AlertDialog(
+        backgroundColor: Colors.black,
         title: const Text(
-          "CONFIRMAR ELIMINACIÓN",
+          "¿Borrar juego?",
           style: TextStyle(color: Colors.white),
-        ),
-        content: Text(
-          "¿Eliminar '${juego.titulo}'?",
-          style: const TextStyle(color: Colors.white70),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text(
-              "CANCELAR",
-              style: TextStyle(color: Colors.white54),
-            ),
+            onPressed: () => Navigator.pop(c),
+            child: const Text("NO"),
           ),
-          ElevatedButton(
-            style:
-                ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+          TextButton(
             onPressed: () {
-              // Eliminar juego de Firestore
-              FirestoreService().deleteGame(juego.id!);
-              Navigator.pop(context);
+              FirestoreService().deleteGame(juego.id);
+              Navigator.pop(c);
             },
-            child: const Text("ELIMINAR"),
+            child: const Text("SÍ", style: TextStyle(color: Colors.red)),
           ),
         ],
       ),

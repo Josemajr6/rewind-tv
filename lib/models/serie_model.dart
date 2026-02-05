@@ -1,34 +1,42 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 class Serie {
-  String? id;
-  String titulo;
-  String resena;
-  String genero;
-  int puntuacion;
+  final String id;
+  final String titulo;
+  final String resena;
+  final String genero;
+  final int puntuacion;
+  final String userId;
+  final String plataforma;
+
   Serie({
-    this.id,
+    this.id = '',
     required this.titulo,
     required this.resena,
     required this.genero,
     required this.puntuacion,
+    this.userId = '',
+    required this.plataforma,
   });
 
-  Map<String, dynamic> toMap() => {
-    'titulo': titulo,
-    'resena': resena,
-    'genero': genero,
-    'puntuacion': puntuacion,
-  };
+  Map<String, dynamic> toMap() {
+    return {
+      'titulo': titulo,
+      'resena': resena,
+      'genero': genero,
+      'puntuacion': puntuacion,
+      'userId': userId,
+      'plataforma': plataforma,
+    };
+  }
 
-  factory Serie.fromFirestore(DocumentSnapshot doc) {
-    Map data = doc.data() as Map;
+  factory Serie.fromMap(Map<String, dynamic> map, String documentId) {
     return Serie(
-      id: doc.id,
-      titulo: data['titulo'] ?? '',
-      resena: data['resena'] ?? '',
-      genero: data['genero'] ?? 'Acción',
-      puntuacion: data['puntuacion'] ?? 5,
+      id: documentId,
+      titulo: map['titulo'] ?? '',
+      resena: map['resena'] ?? '',
+      genero: map['genero'] ?? 'Otro',
+      puntuacion: map['puntuacion']?.toInt() ?? 0,
+      userId: map['userId'] ?? '',
+      plataforma: map['plataforma'] ?? 'Otras',
     );
   }
 }
