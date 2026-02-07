@@ -4,73 +4,76 @@ import '../models/serie_model.dart';
 import '../models/movie_model.dart';
 import '../models/game_model.dart';
 
+/// servicio para manejar todas las operaciones con firestore
+/// aquí está toda la lógica de base de datos para no repetir código
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
+  // obtengo el id del usuario actual (o "invitado" si no hay sesión)
   String get uid => _auth.currentUser?.uid ?? "invitado";
 
   // ============================================================
   // SERIES
   // ============================================================
-  Stream<List<Serie>> getSeries() {
-    return _db
-        .collection('series')
-        .orderBy('puntuacion', descending: true)
-        .snapshots()
-        .map(
-          (snap) => snap.docs
-              .map((doc) => Serie.fromMap(doc.data(), doc.id))
-              .toList(),
-        );
-  }
 
-  Stream<List<Serie>> getSeriesFiltradas({String? genero}) {
+  /// traigo las series filtradas y ordenadas
+  /// si no pongo género me trae todas
+  /// el parámetro descendente controla si va de mayor a menor o al revés
+  Stream<List<Serie>> getSeriesFiltradas({
+    String? genero,
+    bool descendente = true,
+  }) {
     Query query = _db.collection('series');
+
+    // si hay filtro de género lo aplico
     if (genero != null && genero != "Todos") {
       query = query.where('genero', isEqualTo: genero);
     }
+
     return query.snapshots().map((snap) {
+      // convierto los documentos a objetos Serie
       final lista = snap.docs
           .map(
             (doc) => Serie.fromMap(doc.data() as Map<String, dynamic>, doc.id),
           )
           .toList();
-      lista.sort((a, b) => b.puntuacion.compareTo(a.puntuacion));
+
+      // ordeno por puntuación según lo que me pidan
+      lista.sort(
+        (a, b) => descendente
+            ? b.puntuacion.compareTo(a.puntuacion) // de 10 a 1
+            : a.puntuacion.compareTo(b.puntuacion),
+      ); // de 1 a 10
+
       return lista;
     });
   }
 
+  // añado una nueva serie a firestore
   Future<void> addSerie(Serie serie) async {
     await _db.collection('series').add(serie.toMap());
   }
 
+  // actualizo una serie existente por su id
   Future<void> updateSerie(String id, Map<String, dynamic> datos) async {
     await _db.collection('series').doc(id).update(datos);
   }
 
+  // borro una serie por su id
   Future<void> deleteSerie(String id) async {
     await _db.collection('series').doc(id).delete();
   }
 
   // ============================================================
-  // PELÍCULAS (ACTUALIZADO A GÉNERO)
+  // PELÍCULAS
   // ============================================================
 
-  Stream<List<Movie>> getMovies() {
-    return _db
-        .collection('movies')
-        .orderBy('puntuacion', descending: true)
-        .snapshots()
-        .map(
-          (snap) => snap.docs
-              .map((doc) => Movie.fromMap(doc.data(), doc.id))
-              .toList(),
-        );
-  }
-
-  // AHORA FILTRA POR GÉNERO, NO POR PLATAFORMA
-  Stream<List<Movie>> getMoviesFiltradas({String? genero}) {
+  /// mismo sistema que las series pero para películas
+  Stream<List<Movie>> getMoviesFiltradas({
+    String? genero,
+    bool descendente = true,
+  }) {
     Query query = _db.collection('movies');
 
     if (genero != null && genero != "Todos") {
@@ -84,7 +87,11 @@ class FirestoreService {
           )
           .toList();
 
-      lista.sort((a, b) => b.puntuacion.compareTo(a.puntuacion));
+      lista.sort(
+        (a, b) => descendente
+            ? b.puntuacion.compareTo(a.puntuacion)
+            : a.puntuacion.compareTo(b.puntuacion),
+      );
 
       return lista;
     });
@@ -105,29 +112,31 @@ class FirestoreService {
   // ============================================================
   // JUEGOS
   // ============================================================
-  Stream<List<Game>> getGames() {
-    return _db
-        .collection('games')
-        .orderBy('puntuacion', descending: true)
-        .snapshots()
-        .map(
-          (snap) =>
-              snap.docs.map((doc) => Game.fromMap(doc.data(), doc.id)).toList(),
-        );
-  }
 
-  Stream<List<Game>> getGamesFiltrados({String? plataforma}) {
+  /// para los juegos filtro por plataforma en vez de género
+  Stream<List<Game>> getGamesFiltrados({
+    String? plataforma,
+    bool descendente = true,
+  }) {
     Query query = _db.collection('games');
+
     if (plataforma != null && plataforma != "Todas") {
       query = query.where('plataforma', isEqualTo: plataforma);
     }
+
     return query.snapshots().map((snap) {
       final lista = snap.docs
           .map(
             (doc) => Game.fromMap(doc.data() as Map<String, dynamic>, doc.id),
           )
           .toList();
-      lista.sort((a, b) => b.puntuacion.compareTo(a.puntuacion));
+
+      lista.sort(
+        (a, b) => descendente
+            ? b.puntuacion.compareTo(a.puntuacion)
+            : a.puntuacion.compareTo(b.puntuacion),
+      );
+
       return lista;
     });
   }
