@@ -11,6 +11,7 @@ import 'movies_screen.dart';
 import 'games_screen.dart';
 import 'profile_screen.dart';
 
+/// pantalla principal que contiene las 4 secciones de la app
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -19,31 +20,16 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  // controla qué pestaña está activa (0=series, 1=pelis, 2=juegos, 3=perfil)
   int _currentIndex = 0;
 
-  // Colores Neón por sección
+  // colores neón para cada sección
   static const Color colorSerie = Color(0xFFFF00FF);
   static const Color colorPeli = Color(0xFF00FFFF);
   static const Color colorJuego = Color(0xFF00FF66);
   static const Color colorPerfil = Color(0xFFFFD700);
 
-  // Listas de Plataformas para los diálogos
-  final List<String> _plataformasSeries = const [
-    'Netflix',
-    'HBO',
-    'Disney+',
-    'Prime Video',
-    'Otras',
-  ];
-  final List<String> _plataformasPelis = const [
-    'Netflix',
-    'HBO',
-    'Disney+',
-    'Prime Video',
-    'Cine',
-    'Otras',
-  ];
-
+  // las 4 pantallas que se muestran según la pestaña activa
   final List<Widget> _paginas = const [
     SeriesScreen(),
     MoviesScreen(),
@@ -61,7 +47,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
 
-      // --- APPBAR ---
+      // -- barra superior con saludo y logo --
       appBar: AppBar(
         leadingWidth: 150,
         leading: Align(
@@ -88,9 +74,10 @@ class _HomeScreenState extends State<HomeScreen> {
         elevation: 0,
       ),
 
+      // muestro la pantalla activa
       body: _paginas[_currentIndex],
 
-      // --- BARRA INFERIOR ---
+      // -- barra inferior con las 4 pestañas --
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: Colors.black,
@@ -136,29 +123,18 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
 
-      // --- FAB ---
+      // -- botón flotante para añadir (solo visible en series, pelis y juegos) --
       floatingActionButton: _currentIndex == 3
           ? null
-          : Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: colorActual.withOpacity(0.5),
-                    blurRadius: 12,
-                    spreadRadius: 1,
-                  ),
-                ],
-              ),
-              child: FloatingActionButton(
-                backgroundColor: colorActual,
-                child: const Icon(Icons.add, color: Colors.black),
-                onPressed: () => _abrirDialogoAnadir(context),
-              ),
+          : FloatingActionButton(
+              backgroundColor: colorActual,
+              child: const Icon(Icons.add, color: Colors.black),
+              onPressed: () => _abrirDialogoAnadir(context),
             ),
     );
   }
 
+  /// devuelve el color de la sección activa
   Color _obtenerColorActual() {
     if (_currentIndex == 0) return colorSerie;
     if (_currentIndex == 1) return colorPeli;
@@ -166,27 +142,27 @@ class _HomeScreenState extends State<HomeScreen> {
     return colorPerfil;
   }
 
+  /// abre el diálogo correcto según la pestaña activa
   void _abrirDialogoAnadir(BuildContext context) {
     if (_currentIndex == 0)
-      _dialogoAnadirSerie(context);
+      _dialogoSerie(context);
     else if (_currentIndex == 1)
-      _dialogoAnadirPeli(context);
+      _dialogoPeli(context);
     else if (_currentIndex == 2)
-      _dialogoAnadirJuego(context);
+      _dialogoJuego(context);
   }
 
   // ============================================================
-  // DIÁLOGOS DE CREACIÓN (SERIES, PELIS, JUEGOS)
+  // DIÁLOGO PARA AÑADIR SERIE
   // ============================================================
 
-  // --- SERIES ---
-  void _dialogoAnadirSerie(BuildContext context) {
-    final controladorTitulo = TextEditingController();
-    final controladorResena = TextEditingController();
-    String generoSeleccionado = SeriesScreen.generos[1]; // Evitar 'Todos'
-    String plataformaSeleccionada = _plataformasSeries[0];
-    int notaSeleccionada = 5;
-    String? mensajeError;
+  void _dialogoSerie(BuildContext context) {
+    final formKey = GlobalKey<FormState>();
+    final tituloCtrl = TextEditingController();
+    final resenaCtrl = TextEditingController();
+    String genero = SeriesScreen.generos[1]; // evito 'Todos'
+    String plataforma = 'Netflix';
+    int nota = 5;
 
     showDialog(
       context: context,
@@ -197,92 +173,109 @@ class _HomeScreenState extends State<HomeScreen> {
             borderRadius: BorderRadius.circular(15),
             side: BorderSide(color: colorSerie, width: 2),
           ),
-          shadowColor: colorSerie.withOpacity(0.6),
-          elevation: 25,
           title: Text(
             "NUEVA SERIE",
-            style: TextStyle(
-              color: colorSerie,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.5,
-            ),
+            style: TextStyle(color: colorSerie, fontWeight: FontWeight.bold),
             textAlign: TextAlign.center,
           ),
           content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: controladorTitulo,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(
-                    labelText: "Título",
-                    prefixIcon: Icon(Icons.tv, color: Colors.white54),
+            child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // título (obligatorio)
+                  TextFormField(
+                    controller: tituloCtrl,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: const InputDecoration(labelText: "Título *"),
+                    validator: (v) {
+                      if (v == null || v.trim().isEmpty)
+                        return 'Título obligatorio';
+                      if (v.trim().length < 2) return 'Mínimo 2 caracteres';
+                      return null;
+                    },
                   ),
-                ),
-                const SizedBox(height: 15),
-                DropdownButtonFormField<String>(
-                  value: plataformaSeleccionada,
-                  dropdownColor: const Color(0xFF200520),
-                  style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(
-                    labelText: "Plataforma",
-                    prefixIcon: Icon(Icons.live_tv, color: Colors.white54),
+                  const SizedBox(height: 10),
+
+                  // plataforma
+                  DropdownButtonFormField(
+                    value: plataforma,
+                    dropdownColor: const Color(0xFF200520),
+                    decoration: const InputDecoration(labelText: "Plataforma"),
+                    items: SeriesScreen.plataformas
+                        .map(
+                          (p) => DropdownMenuItem(
+                            value: p,
+                            child: Text(
+                              p,
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (v) => setState(() => plataforma = v.toString()),
                   ),
-                  items: _plataformasSeries
-                      .map((p) => DropdownMenuItem(value: p, child: Text(p)))
-                      .toList(),
-                  onChanged: (v) => setState(() => plataformaSeleccionada = v!),
-                ),
-                const SizedBox(height: 15),
-                TextField(
-                  controller: controladorResena,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(
-                    labelText: "Reseña",
-                    prefixIcon: Icon(Icons.edit, color: Colors.white54),
+                  const SizedBox(height: 10),
+
+                  // reseña (opcional pero con mínimo)
+                  TextFormField(
+                    controller: resenaCtrl,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: const InputDecoration(labelText: "Reseña"),
+                    maxLines: 2,
+                    validator: (v) {
+                      if (v != null &&
+                          v.trim().isNotEmpty &&
+                          v.trim().length < 5) {
+                        return 'Mínimo 5 caracteres';
+                      }
+                      return null;
+                    },
                   ),
-                  maxLines: 2,
-                ),
-                const SizedBox(height: 15),
-                DropdownButtonFormField<String>(
-                  value: generoSeleccionado,
-                  dropdownColor: const Color(0xFF200520),
-                  style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(labelText: "Género"),
-                  // Filtramos 'Todos' para que no se pueda elegir al crear
-                  items: SeriesScreen.generos
-                      .where((g) => g != 'Todos')
-                      .map((g) => DropdownMenuItem(value: g, child: Text(g)))
-                      .toList(),
-                  onChanged: (v) => setState(() => generoSeleccionado = v!),
-                ),
-                const SizedBox(height: 15),
-                DropdownButtonFormField<int>(
-                  value: notaSeleccionada,
-                  dropdownColor: const Color(0xFF200520),
-                  style: const TextStyle(
-                    color: colorSerie,
-                    fontWeight: FontWeight.bold,
+                  const SizedBox(height: 10),
+
+                  // género
+                  DropdownButtonFormField(
+                    value: genero,
+                    dropdownColor: const Color(0xFF200520),
+                    decoration: const InputDecoration(labelText: "Género"),
+                    items: SeriesScreen.generos
+                        .where((g) => g != 'Todos')
+                        .map(
+                          (g) => DropdownMenuItem(
+                            value: g,
+                            child: Text(
+                              g,
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (v) => setState(() => genero = v.toString()),
                   ),
-                  decoration: const InputDecoration(labelText: "Puntuación"),
-                  items: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-                      .map(
-                        (n) =>
-                            DropdownMenuItem(value: n, child: Text("Nota: $n")),
-                      )
-                      .toList(),
-                  onChanged: (v) => setState(() => notaSeleccionada = v!),
-                ),
-                if (mensajeError != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 15),
-                    child: Text(
-                      mensajeError!,
-                      style: const TextStyle(color: Colors.redAccent),
-                    ),
+                  const SizedBox(height: 10),
+
+                  // puntuación
+                  DropdownButtonFormField(
+                    value: nota,
+                    dropdownColor: const Color(0xFF200520),
+                    decoration: const InputDecoration(labelText: "Puntuación"),
+                    items: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+                        .map(
+                          (n) => DropdownMenuItem(
+                            value: n,
+                            child: Text(
+                              "$n",
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (v) => setState(() => nota = v as int),
                   ),
-              ],
+                ],
+              ),
             ),
           ),
           actions: [
@@ -294,27 +287,35 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: colorSerie,
-                foregroundColor: Colors.black,
-              ),
+              style: ElevatedButton.styleFrom(backgroundColor: colorSerie),
               onPressed: () {
-                if (controladorTitulo.text.trim().isEmpty) {
-                  setState(() => mensajeError = "Pon un título");
-                  return;
+                // solo guardo si pasa la validación
+                if (formKey.currentState!.validate()) {
+                  FirestoreService().addSerie(
+                    Serie(
+                      titulo: tituloCtrl.text.trim(),
+                      resena: resenaCtrl.text.trim(),
+                      genero: genero,
+                      puntuacion: nota,
+                      plataforma: plataforma,
+                    ),
+                  );
+                  Navigator.pop(context);
+
+                  // mensaje de confirmación
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Serie añadida'),
+                      backgroundColor: Color(0xFF00FF66),
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
                 }
-                FirestoreService().addSerie(
-                  Serie(
-                    titulo: controladorTitulo.text.trim(),
-                    resena: controladorResena.text.trim(),
-                    genero: generoSeleccionado,
-                    puntuacion: notaSeleccionada,
-                    plataforma: plataformaSeleccionada,
-                  ),
-                );
-                Navigator.pop(context);
               },
-              child: const Text("GUARDAR"),
+              child: const Text(
+                "GUARDAR",
+                style: TextStyle(color: Colors.black),
+              ),
             ),
           ],
         ),
@@ -322,16 +323,18 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // --- PELIS (ACTUALIZADO CON GÉNERO) ---
-  void _dialogoAnadirPeli(BuildContext context) {
-    final controladorTitulo = TextEditingController();
-    final controladorDirector = TextEditingController();
-    final controladorResena = TextEditingController();
-    String plataformaSeleccionada = _plataformasPelis[4]; // Default 'Cine'
-    String generoSeleccionado =
-        MoviesScreen.generos[1]; // Default 'Sci-Fi' (evitamos 'Todos')
-    int notaSeleccionada = 5;
-    String? mensajeError;
+  // ============================================================
+  // DIÁLOGO PARA AÑADIR PELÍCULA
+  // ============================================================
+
+  void _dialogoPeli(BuildContext context) {
+    final formKey = GlobalKey<FormState>();
+    final tituloCtrl = TextEditingController();
+    final directorCtrl = TextEditingController();
+    final resenaCtrl = TextEditingController();
+    String genero = MoviesScreen.generos[1];
+    String plataforma = 'Cine';
+    int nota = 5;
 
     showDialog(
       context: context,
@@ -342,103 +345,123 @@ class _HomeScreenState extends State<HomeScreen> {
             borderRadius: BorderRadius.circular(15),
             side: BorderSide(color: colorPeli, width: 2),
           ),
-          shadowColor: colorPeli.withOpacity(0.6),
-          elevation: 25,
           title: Text(
             "NUEVA PELÍCULA",
-            style: TextStyle(
-              color: colorPeli,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.5,
-            ),
+            style: TextStyle(color: colorPeli, fontWeight: FontWeight.bold),
             textAlign: TextAlign.center,
           ),
           content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: controladorTitulo,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(
-                    labelText: "Título",
-                    prefixIcon: Icon(Icons.movie, color: Colors.white54),
+            child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // título
+                  TextFormField(
+                    controller: tituloCtrl,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: const InputDecoration(labelText: "Título *"),
+                    validator: (v) {
+                      if (v == null || v.trim().isEmpty)
+                        return 'Título obligatorio';
+                      if (v.trim().length < 2) return 'Mínimo 2 caracteres';
+                      return null;
+                    },
                   ),
-                ),
-                const SizedBox(height: 15),
-                TextField(
-                  controller: controladorDirector,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(
-                    labelText: "Director",
-                    prefixIcon: Icon(Icons.person, color: Colors.white54),
+                  const SizedBox(height: 10),
+
+                  // director (obligatorio para películas)
+                  TextFormField(
+                    controller: directorCtrl,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: const InputDecoration(labelText: "Director *"),
+                    validator: (v) {
+                      if (v == null || v.trim().isEmpty)
+                        return 'Director obligatorio';
+                      if (v.trim().length < 3) return 'Mínimo 3 caracteres';
+                      return null;
+                    },
                   ),
-                ),
-                const SizedBox(height: 15),
-                // NUEVO: Selector de GÉNERO
-                DropdownButtonFormField<String>(
-                  value: generoSeleccionado,
-                  dropdownColor: const Color(0xFF052020),
-                  style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(labelText: "Género"),
-                  // Importante: Filtramos 'Todos'
-                  items: MoviesScreen.generos
-                      .where((g) => g != 'Todos')
-                      .map((g) => DropdownMenuItem(value: g, child: Text(g)))
-                      .toList(),
-                  onChanged: (v) => setState(() => generoSeleccionado = v!),
-                ),
-                const SizedBox(height: 15),
-                // Selector de PLATAFORMA
-                DropdownButtonFormField<String>(
-                  value: plataformaSeleccionada,
-                  dropdownColor: const Color(0xFF052020),
-                  style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(
-                    labelText: "Plataforma",
-                    prefixIcon: Icon(Icons.theaters, color: Colors.white54),
+                  const SizedBox(height: 10),
+
+                  // género
+                  DropdownButtonFormField(
+                    value: genero,
+                    dropdownColor: const Color(0xFF052020),
+                    decoration: const InputDecoration(labelText: "Género"),
+                    items: MoviesScreen.generos
+                        .where((g) => g != 'Todos')
+                        .map(
+                          (g) => DropdownMenuItem(
+                            value: g,
+                            child: Text(
+                              g,
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (v) => setState(() => genero = v.toString()),
                   ),
-                  items: _plataformasPelis
-                      .map((p) => DropdownMenuItem(value: p, child: Text(p)))
-                      .toList(),
-                  onChanged: (v) => setState(() => plataformaSeleccionada = v!),
-                ),
-                const SizedBox(height: 15),
-                TextField(
-                  controller: controladorResena,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(
-                    labelText: "Reseña",
-                    prefixIcon: Icon(Icons.edit, color: Colors.white54),
+                  const SizedBox(height: 10),
+
+                  // plataforma
+                  DropdownButtonFormField(
+                    value: plataforma,
+                    dropdownColor: const Color(0xFF052020),
+                    decoration: const InputDecoration(labelText: "Plataforma"),
+                    items: MoviesScreen.plataformas
+                        .map(
+                          (p) => DropdownMenuItem(
+                            value: p,
+                            child: Text(
+                              p,
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (v) => setState(() => plataforma = v.toString()),
                   ),
-                  maxLines: 2,
-                ),
-                const SizedBox(height: 15),
-                DropdownButtonFormField<int>(
-                  value: notaSeleccionada,
-                  dropdownColor: const Color(0xFF052020),
-                  style: const TextStyle(
-                    color: colorPeli,
-                    fontWeight: FontWeight.bold,
+                  const SizedBox(height: 10),
+
+                  // reseña
+                  TextFormField(
+                    controller: resenaCtrl,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: const InputDecoration(labelText: "Reseña"),
+                    maxLines: 2,
+                    validator: (v) {
+                      if (v != null &&
+                          v.trim().isNotEmpty &&
+                          v.trim().length < 5) {
+                        return 'Mínimo 5 caracteres';
+                      }
+                      return null;
+                    },
                   ),
-                  decoration: const InputDecoration(labelText: "Puntuación"),
-                  items: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-                      .map(
-                        (n) =>
-                            DropdownMenuItem(value: n, child: Text("Nota: $n")),
-                      )
-                      .toList(),
-                  onChanged: (v) => setState(() => notaSeleccionada = v!),
-                ),
-                if (mensajeError != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 15),
-                    child: Text(
-                      mensajeError!,
-                      style: const TextStyle(color: Colors.redAccent),
-                    ),
+                  const SizedBox(height: 10),
+
+                  // puntuación
+                  DropdownButtonFormField(
+                    value: nota,
+                    dropdownColor: const Color(0xFF052020),
+                    decoration: const InputDecoration(labelText: "Puntuación"),
+                    items: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+                        .map(
+                          (n) => DropdownMenuItem(
+                            value: n,
+                            child: Text(
+                              "$n",
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (v) => setState(() => nota = v as int),
                   ),
-              ],
+                ],
+              ),
             ),
           ),
           actions: [
@@ -450,32 +473,33 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: colorPeli,
-                foregroundColor: Colors.black,
-              ),
+              style: ElevatedButton.styleFrom(backgroundColor: colorPeli),
               onPressed: () {
-                if (controladorTitulo.text.trim().isEmpty) {
-                  setState(() => mensajeError = "Título obligatorio");
-                  return;
+                if (formKey.currentState!.validate()) {
+                  FirestoreService().addMovie(
+                    Movie(
+                      titulo: tituloCtrl.text.trim(),
+                      director: directorCtrl.text.trim(),
+                      puntuacion: nota,
+                      plataforma: plataforma,
+                      genero: genero,
+                      resena: resenaCtrl.text.trim(),
+                    ),
+                  );
+                  Navigator.pop(context);
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Película añadida'),
+                      backgroundColor: Color(0xFF00FF66),
+                    ),
+                  );
                 }
-                if (controladorDirector.text.trim().isEmpty) {
-                  setState(() => mensajeError = "Director obligatorio");
-                  return;
-                }
-                FirestoreService().addMovie(
-                  Movie(
-                    titulo: controladorTitulo.text.trim(),
-                    director: controladorDirector.text.trim(),
-                    puntuacion: notaSeleccionada,
-                    plataforma: plataformaSeleccionada,
-                    genero: generoSeleccionado, // <--- GUARDAMOS GÉNERO
-                    resena: controladorResena.text.trim(),
-                  ),
-                );
-                Navigator.pop(context);
               },
-              child: const Text("GUARDAR"),
+              child: const Text(
+                "GUARDAR",
+                style: TextStyle(color: Colors.black),
+              ),
             ),
           ],
         ),
@@ -483,13 +507,16 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // --- JUEGOS ---
-  void _dialogoAnadirJuego(BuildContext context) {
-    final controladorTitulo = TextEditingController();
-    final controladorResena = TextEditingController();
-    String plataformaSeleccionada = 'PC';
-    int notaSeleccionada = 5;
-    String? mensajeError;
+  // ============================================================
+  // DIÁLOGO PARA AÑADIR JUEGO
+  // ============================================================
+
+  void _dialogoJuego(BuildContext context) {
+    final formKey = GlobalKey<FormState>();
+    final tituloCtrl = TextEditingController();
+    final resenaCtrl = TextEditingController();
+    String plataforma = 'PC';
+    int nota = 5;
 
     showDialog(
       context: context,
@@ -500,83 +527,89 @@ class _HomeScreenState extends State<HomeScreen> {
             borderRadius: BorderRadius.circular(15),
             side: BorderSide(color: colorJuego, width: 2),
           ),
-          shadowColor: colorJuego.withOpacity(0.6),
-          elevation: 25,
           title: Text(
             "NUEVO JUEGO",
-            style: TextStyle(
-              color: colorJuego,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.5,
-            ),
+            style: TextStyle(color: colorJuego, fontWeight: FontWeight.bold),
             textAlign: TextAlign.center,
           ),
           content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: controladorTitulo,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(
-                    labelText: "Título",
-                    prefixIcon: Icon(Icons.gamepad, color: Colors.white54),
+            child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // título
+                  TextFormField(
+                    controller: tituloCtrl,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: const InputDecoration(labelText: "Título *"),
+                    validator: (v) {
+                      if (v == null || v.trim().isEmpty)
+                        return 'Título obligatorio';
+                      if (v.trim().length < 2) return 'Mínimo 2 caracteres';
+                      return null;
+                    },
                   ),
-                ),
-                const SizedBox(height: 15),
-                DropdownButtonFormField<String>(
-                  value: plataformaSeleccionada,
-                  dropdownColor: const Color(0xFF052010),
-                  style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(
-                    labelText: "Plataforma",
-                    prefixIcon: Icon(Icons.computer, color: Colors.white54),
+                  const SizedBox(height: 10),
+
+                  // plataforma
+                  DropdownButtonFormField(
+                    value: plataforma,
+                    dropdownColor: const Color(0xFF052010),
+                    decoration: const InputDecoration(labelText: "Plataforma"),
+                    items: GamesScreen.plataformas
+                        .where((p) => p != 'Todas')
+                        .map(
+                          (p) => DropdownMenuItem(
+                            value: p,
+                            child: Text(
+                              p,
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (v) => setState(() => plataforma = v.toString()),
                   ),
-                  items: GamesScreen.plataformas
-                      .where((p) => p != 'Todas')
-                      .map((p) => DropdownMenuItem(value: p, child: Text(p)))
-                      .toList(),
-                  onChanged: (v) => setState(() => plataformaSeleccionada = v!),
-                ),
-                const SizedBox(height: 15),
-                TextField(
-                  controller: controladorResena,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(
-                    labelText: "Reseña",
-                    prefixIcon: Icon(Icons.edit, color: Colors.white54),
+                  const SizedBox(height: 10),
+
+                  // reseña
+                  TextFormField(
+                    controller: resenaCtrl,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: const InputDecoration(labelText: "Reseña"),
+                    maxLines: 2,
+                    validator: (v) {
+                      if (v != null &&
+                          v.trim().isNotEmpty &&
+                          v.trim().length < 5) {
+                        return 'Mínimo 5 caracteres';
+                      }
+                      return null;
+                    },
                   ),
-                  maxLines: 2,
-                ),
-                const SizedBox(height: 15),
-                DropdownButtonFormField<int>(
-                  value: notaSeleccionada,
-                  dropdownColor: const Color(0xFF052010),
-                  style: const TextStyle(
-                    color: colorJuego,
-                    fontWeight: FontWeight.bold,
+                  const SizedBox(height: 10),
+
+                  // puntuación
+                  DropdownButtonFormField(
+                    value: nota,
+                    dropdownColor: const Color(0xFF052010),
+                    decoration: const InputDecoration(labelText: "Puntuación"),
+                    items: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+                        .map(
+                          (n) => DropdownMenuItem(
+                            value: n,
+                            child: Text(
+                              "$n",
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (v) => setState(() => nota = v as int),
                   ),
-                  decoration: const InputDecoration(
-                    labelText: "Puntuación",
-                    prefixIcon: Icon(Icons.star, color: Colors.white54),
-                  ),
-                  items: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-                      .map(
-                        (n) =>
-                            DropdownMenuItem(value: n, child: Text("Nota: $n")),
-                      )
-                      .toList(),
-                  onChanged: (v) => setState(() => notaSeleccionada = v!),
-                ),
-                if (mensajeError != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 15),
-                    child: Text(
-                      mensajeError!,
-                      style: const TextStyle(color: Colors.redAccent),
-                    ),
-                  ),
-              ],
+                ],
+              ),
             ),
           ),
           actions: [
@@ -588,27 +621,32 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: colorJuego,
-                foregroundColor: Colors.black,
-              ),
+              style: ElevatedButton.styleFrom(backgroundColor: colorJuego),
               onPressed: () {
-                if (controladorTitulo.text.trim().isEmpty) {
-                  setState(() => mensajeError = "Título obligatorio");
-                  return;
+                if (formKey.currentState!.validate()) {
+                  FirestoreService().addGame(
+                    Game(
+                      titulo: tituloCtrl.text.trim(),
+                      plataforma: plataforma,
+                      estado: "Jugando", // estado por defecto
+                      puntuacion: nota,
+                      resena: resenaCtrl.text.trim(),
+                    ),
+                  );
+                  Navigator.pop(context);
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Juego añadido'),
+                      backgroundColor: Color(0xFF00FF66),
+                    ),
+                  );
                 }
-                FirestoreService().addGame(
-                  Game(
-                    titulo: controladorTitulo.text.trim(),
-                    plataforma: plataformaSeleccionada,
-                    estado: "Jugando",
-                    puntuacion: notaSeleccionada,
-                    resena: controladorResena.text.trim(),
-                  ),
-                );
-                Navigator.pop(context);
               },
-              child: const Text("GUARDAR"),
+              child: const Text(
+                "GUARDAR",
+                style: TextStyle(color: Colors.black),
+              ),
             ),
           ],
         ),
