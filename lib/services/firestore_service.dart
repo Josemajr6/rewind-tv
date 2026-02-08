@@ -17,9 +17,9 @@ class FirestoreService {
   // SERIES
   // ============================================================
 
-  /// traigo las series filtradas y ordenadas
-  /// si no pongo género me trae todas
-  /// el parámetro descendente controla si va de mayor a menor o al revés
+  /// traigo las series filtradas y ordenadas directamente desde firestore
+  /// uso orderBy para que firebase cree automáticamente los índices compuestos
+  /// cuando hay filtro + ordenación, firebase necesita un índice (te dará un link para crearlo)
   Stream<List<Serie>> getSeriesFiltradas({
     String? genero,
     bool descendente = true,
@@ -31,22 +31,18 @@ class FirestoreService {
       query = query.where('genero', isEqualTo: genero);
     }
 
+    // ordeno directamente en firestore (esto crea índices compuestos automáticamente)
+    // cuando ejecutes esto por primera vez con filtro, firebase te dará error con un link
+    // ese link te lleva directo a crear el índice, solo dale click y listo
+    query = query.orderBy('puntuacion', descending: descendente);
+
     return query.snapshots().map((snap) {
-      // convierto los documentos a objetos Serie
-      final lista = snap.docs
+      // ya vienen ordenados desde firestore, solo convierto a objetos
+      return snap.docs
           .map(
             (doc) => Serie.fromMap(doc.data() as Map<String, dynamic>, doc.id),
           )
           .toList();
-
-      // ordeno por puntuación según lo que me pidan
-      lista.sort(
-        (a, b) => descendente
-            ? b.puntuacion.compareTo(a.puntuacion) // de 10 a 1
-            : a.puntuacion.compareTo(b.puntuacion),
-      ); // de 1 a 10
-
-      return lista;
     });
   }
 
@@ -69,7 +65,8 @@ class FirestoreService {
   // PELÍCULAS
   // ============================================================
 
-  /// mismo sistema que las series pero para películas
+  /// mismo sistema que series pero para películas
+  /// firestore crea índice automático cuando combino where + orderBy
   Stream<List<Movie>> getMoviesFiltradas({
     String? genero,
     bool descendente = true,
@@ -80,20 +77,15 @@ class FirestoreService {
       query = query.where('genero', isEqualTo: genero);
     }
 
+    // ordenación directa en firestore (genera índice compuesto)
+    query = query.orderBy('puntuacion', descending: descendente);
+
     return query.snapshots().map((snap) {
-      final lista = snap.docs
+      return snap.docs
           .map(
             (doc) => Movie.fromMap(doc.data() as Map<String, dynamic>, doc.id),
           )
           .toList();
-
-      lista.sort(
-        (a, b) => descendente
-            ? b.puntuacion.compareTo(a.puntuacion)
-            : a.puntuacion.compareTo(b.puntuacion),
-      );
-
-      return lista;
     });
   }
 
@@ -114,6 +106,7 @@ class FirestoreService {
   // ============================================================
 
   /// para los juegos filtro por plataforma en vez de género
+  /// mismo concepto: where + orderBy = índice compuesto automático
   Stream<List<Game>> getGamesFiltrados({
     String? plataforma,
     bool descendente = true,
@@ -124,20 +117,15 @@ class FirestoreService {
       query = query.where('plataforma', isEqualTo: plataforma);
     }
 
+    // ordenación en firestore para usar índices
+    query = query.orderBy('puntuacion', descending: descendente);
+
     return query.snapshots().map((snap) {
-      final lista = snap.docs
+      return snap.docs
           .map(
             (doc) => Game.fromMap(doc.data() as Map<String, dynamic>, doc.id),
           )
           .toList();
-
-      lista.sort(
-        (a, b) => descendente
-            ? b.puntuacion.compareTo(a.puntuacion)
-            : a.puntuacion.compareTo(b.puntuacion),
-      );
-
-      return lista;
     });
   }
 

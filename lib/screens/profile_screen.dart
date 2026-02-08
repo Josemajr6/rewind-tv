@@ -98,7 +98,7 @@ class ProfileScreen extends StatelessWidget {
           user.displayName ?? "USUARIO",
           style: TextStyle(
             color: color,
-            fontSize: 26,
+            fontSize: 20,
             fontWeight: FontWeight.bold,
             letterSpacing: 1.5,
           ),
