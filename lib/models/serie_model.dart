@@ -1,3 +1,5 @@
+import 'package:firebase_auth/firebase_auth.dart';
+
 class Serie {
   final String id;
   final String titulo;
@@ -13,9 +15,9 @@ class Serie {
     required this.resena,
     required this.genero,
     required this.puntuacion,
-    this.userId = '',
+    String? userId, // ahora es opcional
     required this.plataforma,
-  });
+  }) : userId = userId ?? FirebaseAuth.instance.currentUser?.uid ?? 'invitado';
 
   Map<String, dynamic> toMap() {
     return {

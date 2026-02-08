@@ -47,8 +47,11 @@ class FirestoreService {
   }
 
   // añado una nueva serie a firestore
+  // importante: guardo el userId actual en el documento
   Future<void> addSerie(Serie serie) async {
-    await _db.collection('series').add(serie.toMap());
+    final datos = serie.toMap();
+    datos['userId'] = uid; // fuerzo el userId actual
+    await _db.collection('series').add(datos);
   }
 
   // actualizo una serie existente por su id
@@ -89,8 +92,11 @@ class FirestoreService {
     });
   }
 
+  // añado película con userId del usuario actual
   Future<void> addMovie(Movie peli) async {
-    await _db.collection('movies').add(peli.toMap());
+    final datos = peli.toMap();
+    datos['userId'] = uid; // fuerzo el userId actual
+    await _db.collection('movies').add(datos);
   }
 
   Future<void> updateMovie(String id, Map<String, dynamic> datos) async {
@@ -129,8 +135,11 @@ class FirestoreService {
     });
   }
 
+  // añado juego con userId del usuario actual
   Future<void> addGame(Game juego) async {
-    await _db.collection('games').add(juego.toMap());
+    final datos = juego.toMap();
+    datos['userId'] = uid; // fuerzo el userId actual
+    await _db.collection('games').add(datos);
   }
 
   Future<void> updateGame(String id, Map<String, dynamic> datos) async {
