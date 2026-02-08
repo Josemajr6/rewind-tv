@@ -180,7 +180,7 @@ class _GamesScreenState extends State<GamesScreen> {
                           const SizedBox(height: 8),
                           // plataforma y estado del juego
                           Text(
-                            "${juego.plataforma} • ${juego.estado}",
+                            "Plataforma: ${juego.plataforma}",
                             style: const TextStyle(
                               color: Colors.white70,
                               fontSize: 12,

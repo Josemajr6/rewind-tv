@@ -628,7 +628,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     Game(
                       titulo: tituloCtrl.text.trim(),
                       plataforma: plataforma,
-                      estado: "Jugando", // estado por defecto
                       puntuacion: nota,
                       resena: resenaCtrl.text.trim(),
                     ),
