@@ -9,7 +9,6 @@ class ProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     // Obtenemos el usuario actual
     final user = AuthService().currentUser;
-    // Color temático para el perfil (Amarillo neón para seguir la estética)
     const Color colorPerfil = Color(0xFFFFD700);
 
     return Scaffold(

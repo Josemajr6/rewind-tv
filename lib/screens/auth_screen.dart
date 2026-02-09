@@ -18,7 +18,7 @@ class AuthScreen extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Logo con efecto neón
+              // logo
               Container(
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,

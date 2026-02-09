@@ -13,13 +13,9 @@ class FirestoreService {
   // obtengo el id del usuario actual (o "invitado" si no hay sesión)
   String get uid => _auth.currentUser?.uid ?? "invitado";
 
-  // ============================================================
-  // SERIES
-  // ============================================================
-
+  // Series
   /// traigo las series filtradas y ordenadas directamente desde firestore
-  /// uso orderBy para que firebase cree automáticamente los índices compuestos
-  /// cuando hay filtro + ordenación, firebase necesita un índice (te dará un link para crearlo)
+  /// uso orderBy para que firebase cree automáticamente los índices compuestos ya que es filtro + ordenacion
   Stream<List<Serie>> getSeriesFiltradas({
     String? genero,
     bool descendente = true,
@@ -54,19 +50,15 @@ class FirestoreService {
     await _db.collection('series').add(datos);
   }
 
-  // actualizo una serie existente por su id
   Future<void> updateSerie(String id, Map<String, dynamic> datos) async {
     await _db.collection('series').doc(id).update(datos);
   }
 
-  // borro una serie por su id
   Future<void> deleteSerie(String id) async {
     await _db.collection('series').doc(id).delete();
   }
 
-  // ============================================================
-  // PELÍCULAS
-  // ============================================================
+  // Películas
 
   /// mismo sistema que series pero para películas
   /// firestore crea índice automático cuando combino where + orderBy
@@ -95,7 +87,7 @@ class FirestoreService {
   // añado película con userId del usuario actual
   Future<void> addMovie(Movie peli) async {
     final datos = peli.toMap();
-    datos['userId'] = uid; // fuerzo el userId actual
+    datos['userId'] = uid;
     await _db.collection('movies').add(datos);
   }
 
@@ -107,9 +99,7 @@ class FirestoreService {
     await _db.collection('movies').doc(id).delete();
   }
 
-  // ============================================================
-  // JUEGOS
-  // ============================================================
+  // Juegos
 
   /// para los juegos filtro por plataforma en vez de género
   /// mismo concepto: where + orderBy = índice compuesto automático
@@ -138,7 +128,7 @@ class FirestoreService {
   // añado juego con userId del usuario actual
   Future<void> addGame(Game juego) async {
     final datos = juego.toMap();
-    datos['userId'] = uid; // fuerzo el userId actual
+    datos['userId'] = uid;
     await _db.collection('games').add(datos);
   }
 

@@ -15,7 +15,7 @@ class AuthService {
   // Método para iniciar sesión con Google
   Future<void> signInWithGoogle(BuildContext context) async {
     try {
-      // Disparar el flujo de autenticación de Google (abre la ventana modal)
+      // Aquí se abre la ventana de Google para el login
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
 
       if (googleUser == null) return; // Si cancela el login
@@ -48,7 +48,7 @@ class AuthService {
           'ultimo_login': FieldValue.serverTimestamp(),
         }, SetOptions(merge: true));
 
-        // 5. Navegar a la Home
+        // Navegar a la Home
         if (context.mounted) {
           Navigator.pushReplacement(
             context,
